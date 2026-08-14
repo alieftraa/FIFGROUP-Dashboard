@@ -1157,7 +1157,7 @@
         <div class="sb-label">Mode Tampilan</div>
         <div class="mode-toggle">
           <button type="button" id="btn-mode-status" onclick="setMode('status')"
-            class="mode-btn {% if selected_mode == 'status' %}active{% endif %}">
+            class="mode-btn {% if selected_mode == 'status' or not selected_mode %}active{% endif %}">
             <svg style="width:13px;height:13px;flex-shrink:0;" fill="none" stroke="currentColor" viewBox="0 0 24 24"
               stroke-width="2.2">
               <path stroke-linecap="round" stroke-linejoin="round"
@@ -1174,14 +1174,15 @@
             </svg>
             Berdasarkan Jenis Network
           </button>
-          <a href="?run_id={{ sel_run_id }}&mode=coverage" class="mode-btn">
+          <button type="button" id="btn-mode-coverage" onclick="setMode('coverage')"
+            class="mode-btn {% if selected_mode == 'coverage' %}active{% endif %}">
             <svg style="width:13px;height:13px;flex-shrink:0;" fill="none" stroke="currentColor" viewBox="0 0 24 24"
               stroke-width="2.2">
               <path stroke-linecap="round" stroke-linejoin="round"
                 d="M2.25 21h19.5M3.75 3v18h16.5V3H3.75zm3.75 3.75h3v3h-3v-3zm6.75 0h3v3h-3v-3zm-6.75 6h3v3h-3v-3zm6.75 0h3v3h-3v-3z" />
             </svg>
             Branch Coverage
-          </a>
+          </button>
         </div>
       </div>
 
@@ -1218,6 +1219,19 @@
               class="chip-dot" style="background:#64748b;"></span><span style="color:#475569;">Lainnya</span></label>
         </div>
         <button class="apply-btn" onclick="applyFilters()">Terapkan Filter</button>
+      </div>
+
+      <!-- Filter Coverage (Branch Territory Selector) -->
+      <div class="sb-section" id="panel-filter-coverage" style="display:none;">
+        <div class="sb-label">Wilayah Cabang &amp; ZIPCODE</div>
+        <div style="margin-bottom:6px;">
+          <input type="text" id="input-search-branch" placeholder="Cari cabang atau kode pos..." oninput="filterBranchList(this.value)"
+                 style="width:100%;padding:5px 9px;border:1px solid #cbd5e1;border-radius:7px;font-size:11px;outline:none;background:#f8fafc;color:#1e293b;">
+        </div>
+        <div id="coverage-branch-list" style="max-height:165px;overflow-y:auto;display:flex;flex-direction:column;gap:3px;padding-right:2px;">
+          <!-- Dynamically populated -->
+        </div>
+        <button class="apply-btn" style="margin-top:6px;background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;" onclick="resetTerritoryFocus()">Reset Fokus Wilayah</button>
       </div>
 
       <!-- Stats -->
@@ -1266,44 +1280,82 @@
       <!-- Legend -->
       <div class="sb-section">
         <div class="sb-label">Legenda Peta</div>
-        <div
-          style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;margin-top:2px;">
-          Jenis Network (Marker)</div>
-        <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px;">
-          <div class="legend-item">
-            <div class="legend-icon-wrap"><svg width="15" height="17" viewBox="0 0 30 34"><path d="M15 2L3 9.5v19a1.5 1.5 0 001.5 1.5h21a1.5 1.5 0 001.5-1.5V9.5L15 2z" fill="#2563eb"/><rect x="7" y="11" width="4.5" height="4.5" fill="white"/><rect x="18.5" y="11" width="4.5" height="4.5" fill="white"/><rect x="7" y="18" width="4.5" height="4.5" fill="white"/><rect x="18.5" y="18" width="4.5" height="4.5" fill="white"/><path d="M13 22h4v8h-4z" fill="white"/></svg></div>
-            <span style="font-weight:600;color:#1e40af;">Cabang</span>
-            <span style="font-size:9.5px;color:#94a3b8;margin-left:auto;">Blue (Gedung)</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-icon-wrap"><svg width="15" height="17" viewBox="0 0 30 34"><path d="M15 2L1.5 13.5l2.5 2 1.5-1.2V28a2 2 0 002 2h15a2 2 0 002-2V14.3l1.5 1.2 2.5-2L15 2z" fill="#f97316"/><rect x="12" y="19" width="6" height="11" fill="white"/><rect x="7.5" y="16" width="3.5" height="4" fill="white"/><rect x="19" y="16" width="3.5" height="4" fill="white"/></svg></div>
-            <span style="font-weight:600;color:#c2410c;">Pos</span>
-            <span style="font-size:9.5px;color:#94a3b8;margin-left:auto;">Orange (Rumah)</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-icon-wrap"><svg width="15" height="17" viewBox="0 0 30 34"><rect x="3" y="13" width="24" height="17" rx="2" fill="#22c55e"/><path d="M2 13l3.5-9h19l3.5 9z" fill="#22c55e"/><path d="M8.5 4v9M15 4v9M21.5 4v9" stroke="white" stroke-width="1.6"/><rect x="6" y="18" width="7.5" height="7.5" fill="white"/><rect x="16.5" y="18" width="7.5" height="12" fill="white"/></svg></div>
-            <span style="font-weight:600;color:#15803d;">Kios</span>
-            <span style="font-size:9.5px;color:#94a3b8;margin-left:auto;">Light Green (Toko)</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-icon-wrap"><svg width="15" height="17" viewBox="0 0 30 34"><rect x="3" y="13" width="24" height="17" rx="2" fill="#0d9488"/><path d="M2 13l3.5-9h19l3.5 9z" fill="#0d9488"/><path d="M8.5 4v9M15 4v9M21.5 4v9" stroke="white" stroke-width="1.6"/><rect x="6" y="18" width="7.5" height="7.5" fill="white"/><rect x="16.5" y="18" width="7.5" height="12" fill="white"/></svg></div>
-            <span style="font-weight:600;color:#0f766e;">Sub Kios</span>
-            <span style="font-size:9.5px;color:#94a3b8;margin-left:auto;">Teal Green (Toko)</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-icon-wrap"><svg width="14" height="16" viewBox="0 0 26 30"><path d="M13 2C7.5 2 3 6.5 3 12c0 7.5 10 16 10 16s10-8.5 10-16c0-5.5-4.5-10-10-10z" fill="#64748b"/><circle cx="13" cy="11" r="3.5" fill="white"/></svg></div>
-            <span style="font-weight:600;color:#475569;">Lainnya</span>
-            <span style="font-size:9.5px;color:#94a3b8;margin-left:auto;">Gray</span>
+
+        <!-- Legend Status -->
+        <div id="legend-status">
+          <div
+            style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;margin-top:2px;">
+            Status Verifikasi</div>
+          <div style="display:flex;flex-direction:column;gap:2px;">
+            <div class="legend-item"><span class="legend-dot" style="background:#22c55e;"></span>Verified</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#f59e0b;"></span>Need Verification</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#f97316;"></span>Duplicate</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#ef4444;"></span>Suspended</div>
           </div>
         </div>
-        <div
-          style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;border-top:1px solid #f1f5f9;padding-top:6px;">
-          Status Verifikasi</div>
-        <div style="display:flex;flex-direction:column;gap:2px;">
-          <div class="legend-item"><span class="legend-dot" style="background:#22c55e;"></span>Verified</div>
-          <div class="legend-item"><span class="legend-dot" style="background:#f59e0b;"></span>Need Verification</div>
-          <div class="legend-item"><span class="legend-dot" style="background:#f97316;"></span>Duplicate</div>
-          <div class="legend-item"><span class="legend-dot" style="background:#ef4444;"></span>Suspended</div>
+
+        <!-- Legend Network -->
+        <div id="legend-network" style="display:none;">
+          <div
+            style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;margin-top:2px;">
+            Jenis Network (Marker)</div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <div class="legend-item">
+              <div class="legend-icon-wrap"><svg width="15" height="17" viewBox="0 0 30 34"><path d="M15 2L3 9.5v19a1.5 1.5 0 001.5 1.5h21a1.5 1.5 0 001.5-1.5V9.5L15 2z" fill="#2563eb"/><rect x="7" y="11" width="4.5" height="4.5" fill="white"/><rect x="18.5" y="11" width="4.5" height="4.5" fill="white"/><rect x="7" y="18" width="4.5" height="4.5" fill="white"/><rect x="18.5" y="18" width="4.5" height="4.5" fill="white"/><path d="M13 22h4v8h-4z" fill="white"/></svg></div>
+              <span style="font-weight:600;color:#1e40af;">Cabang</span>
+              <span style="font-size:9.5px;color:#94a3b8;margin-left:auto;">Blue (Gedung)</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-icon-wrap"><svg width="15" height="17" viewBox="0 0 30 34"><path d="M15 2L1.5 13.5l2.5 2 1.5-1.2V28a2 2 0 002 2h15a2 2 0 002-2V14.3l1.5 1.2 2.5-2L15 2z" fill="#f97316"/><rect x="12" y="19" width="6" height="11" fill="white"/><rect x="7.5" y="16" width="3.5" height="4" fill="white"/><rect x="19" y="16" width="3.5" height="4" fill="white"/></svg></div>
+              <span style="font-weight:600;color:#c2410c;">Pos</span>
+              <span style="font-size:9.5px;color:#94a3b8;margin-left:auto;">Orange (Rumah)</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-icon-wrap"><svg width="15" height="17" viewBox="0 0 30 34"><rect x="3" y="13" width="24" height="17" rx="2" fill="#22c55e"/><path d="M2 13l3.5-9h19l3.5 9z" fill="#22c55e"/><path d="M8.5 4v9M15 4v9M21.5 4v9" stroke="white" stroke-width="1.6"/><rect x="6" y="18" width="7.5" height="7.5" fill="white"/><rect x="16.5" y="18" width="7.5" height="12" fill="white"/></svg></div>
+              <span style="font-weight:600;color:#15803d;">Kios</span>
+              <span style="font-size:9.5px;color:#94a3b8;margin-left:auto;">Light Green (Toko)</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-icon-wrap"><svg width="15" height="17" viewBox="0 0 30 34"><rect x="3" y="13" width="24" height="17" rx="2" fill="#0d9488"/><path d="M2 13l3.5-9h19l3.5 9z" fill="#0d9488"/><path d="M8.5 4v9M15 4v9M21.5 4v9" stroke="white" stroke-width="1.6"/><rect x="6" y="18" width="7.5" height="7.5" fill="white"/><rect x="16.5" y="18" width="7.5" height="12" fill="white"/></svg></div>
+              <span style="font-weight:600;color:#0f766e;">Sub Kios</span>
+              <span style="font-size:9.5px;color:#94a3b8;margin-left:auto;">Teal Green (Toko)</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-icon-wrap"><svg width="14" height="16" viewBox="0 0 26 30"><path d="M13 2C7.5 2 3 6.5 3 12c0 7.5 10 16 10 16s10-8.5 10-16c0-5.5-4.5-10-10-10z" fill="#64748b"/><circle cx="13" cy="11" r="3.5" fill="white"/></svg></div>
+              <span style="font-weight:600;color:#475569;">Lainnya</span>
+              <span style="font-size:9.5px;color:#94a3b8;margin-left:auto;">Gray</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Legend Coverage -->
+        <div id="legend-coverage" style="display:none;">
+          <div
+            style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;margin-top:2px;">
+            Branch Coverage</div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <div class="legend-item">
+              <div style="width:16px;height:12px;border:1.5px dashed #2563eb;background:rgba(37,99,235,0.18);border-radius:3px;flex-shrink:0;"></div>
+              <span style="font-weight:600;color:#1e293b;">Wilayah Cakupan</span>
+              <span style="font-size:9.5px;color:#94a3b8;margin-left:auto;">Polygon</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-icon-wrap"><svg width="15" height="17" viewBox="0 0 30 34"><path d="M15 2L3 9.5v19a1.5 1.5 0 001.5 1.5h21a1.5 1.5 0 001.5-1.5V9.5L15 2z" fill="#2563eb"/><rect x="7" y="11" width="4.5" height="4.5" fill="white"/><rect x="18.5" y="11" width="4.5" height="4.5" fill="white"/><rect x="7" y="18" width="4.5" height="4.5" fill="white"/><rect x="18.5" y="18" width="4.5" height="4.5" fill="white"/><path d="M13 22h4v8h-4z" fill="white"/></svg></div>
+              <span style="font-weight:600;color:#1e40af;">Cabang</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-icon-wrap"><svg width="15" height="17" viewBox="0 0 30 34"><path d="M15 2L1.5 13.5l2.5 2 1.5-1.2V28a2 2 0 002 2h15a2 2 0 002-2V14.3l1.5 1.2 2.5-2L15 2z" fill="#f97316"/><rect x="12" y="19" width="6" height="11" fill="white"/><rect x="7.5" y="16" width="3.5" height="4" fill="white"/><rect x="19" y="16" width="3.5" height="4" fill="white"/></svg></div>
+              <span style="font-weight:600;color:#c2410c;">Pos</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-icon-wrap"><svg width="15" height="17" viewBox="0 0 30 34"><rect x="3" y="13" width="24" height="17" rx="2" fill="#22c55e"/><path d="M2 13l3.5-9h19l3.5 9z" fill="#22c55e"/><path d="M8.5 4v9M15 4v9M21.5 4v9" stroke="white" stroke-width="1.6"/><rect x="6" y="18" width="7.5" height="7.5" fill="white"/><rect x="16.5" y="18" width="7.5" height="12" fill="white"/></svg></div>
+              <span style="font-weight:600;color:#15803d;">Kios</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-icon-wrap"><svg width="15" height="17" viewBox="0 0 30 34"><rect x="3" y="13" width="24" height="17" rx="2" fill="#0d9488"/><path d="M2 13l3.5-9h19l3.5 9z" fill="#0d9488"/><path d="M8.5 4v9M15 4v9M21.5 4v9" stroke="white" stroke-width="1.6"/><rect x="6" y="18" width="7.5" height="7.5" fill="white"/><rect x="16.5" y="18" width="7.5" height="12" fill="white"/></svg></div>
+              <span style="font-weight:600;color:#0f766e;">Sub Kios</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1846,13 +1898,355 @@
 
   /* ── Map state ── */
   let map, clusterGroup, allLocs = [];
-  let currentMode = '{{ selected_mode }}' === 'network' ? 'network' : 'status';
+  let currentMode = '{{ selected_mode }}' === 'coverage' ? 'coverage' : ('{{ selected_mode }}' === 'network' ? 'network' : 'status');
+
+  /* ─────────────────────────────────────────────────────────────
+     Branch Coverage Real Geographic Administrative Boundaries
+     ───────────────────────────────────────────────────────────── */
+
+  const BOUNDARIES_API_URL = '{% url "gbp:branch_boundaries_api" %}';
+
+  const BRANCH_PALETTE = [
+    '#2563EB', '#7C3AED', '#059669', '#D97706', '#DC2626',
+    '#0891B2', '#DB2777', '#4F46E5', '#0D9488', '#EA580C',
+    '#16A34A', '#9333EA', '#0284C7', '#CA8A04', '#475569'
+  ];
+
+  let branchTerritories = {};      // prefix -> territory metadata
+  let boundaryByPrefix = {};       // prefix -> GeoJSON Feature
+  let territoryLayers = {};         // prefix -> L.geoJSON layer
+  let territoryGroup = null;        // L.featureGroup for real administrative boundaries
+  let selectedTerritoryPrefix = null;
+
+  async function loadBoundaryGeoJSON() {
+    try {
+      const res = await fetch(BOUNDARIES_API_URL);
+      const data = await res.json();
+      boundaryByPrefix = {};
+      (data.features || []).forEach(feat => {
+        if (feat.properties && feat.properties.prefix) {
+          boundaryByPrefix[feat.properties.prefix] = feat;
+        }
+      });
+    } catch (err) {
+      console.warn('Could not load administrative boundary GeoJSON:', err);
+    }
+  }
+
+  function buildBranchTerritories(locs) {
+    branchTerritories = {};
+    let colorIdx = 0;
+
+    locs.forEach(loc => {
+      let prefix = loc.branch_prefix;
+      if (!prefix || prefix.length < 3) {
+        prefix = 'UNASSIGNED';
+      }
+
+      if (!branchTerritories[prefix]) {
+        branchTerritories[prefix] = {
+          prefix: prefix,
+          branch_name: '',
+          area: loc.area || '',
+          color: prefix === 'UNASSIGNED' ? '#94a3b8' : BRANCH_PALETTE[colorIdx++ % BRANCH_PALETTE.length],
+          locations: [],
+          zipcodes: new Set(),
+          cabang_count: 0,
+          pos_count: 0,
+          kios_count: 0,
+          subkios_count: 0,
+          unassigned_count: 0,
+          total: 0,
+          cabang_loc: null,
+          has_boundary: false,
+          admin_name: ''
+        };
+      }
+
+      const t = branchTerritories[prefix];
+      t.locations.push(loc);
+      t.total++;
+
+      if (loc.zipcode) {
+        t.zipcodes.add(loc.zipcode);
+      }
+
+      const nt = normalizeNetworkType(loc.network_type);
+      if (nt === 'Cabang') {
+        t.cabang_count++;
+        t.cabang_loc = loc;
+        t.branch_name = loc.business_name || loc.network_name || `Cabang ${prefix}`;
+      } else if (nt === 'Pos') {
+        t.pos_count++;
+      } else if (nt === 'Kios') {
+        t.kios_count++;
+      } else if (nt === 'Subkios') {
+        t.subkios_count++;
+      } else {
+        t.unassigned_count++;
+      }
+    });
+
+    // Fallback branch names & administrative lookup
+    Object.values(branchTerritories).forEach(t => {
+      if (!t.branch_name) {
+        if (t.prefix === 'UNASSIGNED') {
+          t.branch_name = 'Lokasi Tanpa Cabang (Unassigned)';
+        } else {
+          const first = t.locations[0];
+          const rawName = first.business_name || first.network_name || `FIFGROUP Branch ${t.prefix}`;
+          t.branch_name = rawName.replace(/^(FIFGROUP\s*-\s*|FIFGROUP\s*)/i, 'FIFGROUP ').replace(/\s*\([^)]*\)/, '');
+        }
+      }
+
+      const feat = boundaryByPrefix[t.prefix];
+      if (feat && feat.properties) {
+        t.has_boundary = true;
+        t.admin_name = feat.properties.matched_query || feat.properties.display_name || '';
+      } else {
+        t.has_boundary = false;
+      }
+    });
+  }
+
+  function renderTerritoryPolygons() {
+    if (!territoryGroup) {
+      territoryGroup = L.featureGroup();
+    }
+    territoryGroup.clearLayers();
+    territoryLayers = {};
+
+    Object.values(branchTerritories).forEach(t => {
+      if (t.prefix === 'UNASSIGNED') return;
+
+      const feat = boundaryByPrefix[t.prefix];
+      // STRICT REQUIREMENT: If real geographic boundary is not available, DO NOT create fake circles/hulls/polygons.
+      if (!feat || !feat.geometry) {
+        t.has_boundary = false;
+        return;
+      }
+
+      t.has_boundary = true;
+      const zipsArr = Array.from(t.zipcodes);
+      const zipStr = zipsArr.length ? zipsArr.join(', ') : '—';
+
+      const layer = L.geoJSON(feat, {
+        style: function() {
+          return {
+            color: t.color,
+            fillColor: t.color,
+            fillOpacity: 0.18,
+            weight: 2.5,
+            dashArray: '5, 5',
+            lineJoin: 'round'
+          };
+        },
+        onEachFeature: function(feature, subLayer) {
+          subLayer.bindPopup(buildTerritoryPopup(t), { maxWidth: 320, className: 'custom-popup' });
+          subLayer.bindTooltip(`<b>${t.branch_name}</b><br><span style='font-size:10.5px;'>Wilayah: ${t.admin_name || t.area || 'Administratif'} (${t.total} Lokasi)</span>`, {
+            sticky: true,
+            direction: 'top',
+            offset: [0, -10]
+          });
+
+          subLayer.on('mouseover', function() {
+            if (selectedTerritoryPrefix !== t.prefix) {
+              subLayer.setStyle({ fillOpacity: 0.38, weight: 3.5 });
+            }
+          });
+          subLayer.on('mouseout', function() {
+            if (selectedTerritoryPrefix !== t.prefix) {
+              subLayer.setStyle({ fillOpacity: selectedTerritoryPrefix ? 0.04 : 0.18, weight: 2.5 });
+            }
+          });
+          subLayer.on('click', function() {
+            selectBranchTerritory(t.prefix);
+          });
+        }
+      });
+
+      territoryGroup.addLayer(layer);
+      territoryLayers[t.prefix] = layer;
+    });
+  }
+
+  function buildTerritoryPopup(t) {
+    const zipsArr = Array.from(t.zipcodes);
+    const zipBadges = zipsArr.length
+      ? zipsArr.map(z => `<span style="font-family:monospace;font-size:10.5px;font-weight:600;padding:2px 6px;border-radius:6px;background:#f1f5f9;color:#1e293b;border:1px solid #e2e8f0;">${z}</span>`).join('')
+      : '<span style="font-size:11px;color:#94a3b8;font-style:italic;">Tidak ada data ZIPCODE</span>';
+
+    const safeStoreCode = (t.cabang_loc && t.cabang_loc.store_code ? t.cabang_loc.store_code : (t.locations[0] ? t.locations[0].store_code : '')).replace(/'/g, "\\'");
+
+    const perfBtn = t.cabang_count > 0 ? `
+      <button class="popup-perf-btn" onclick="openPerfPanelByStoreCode('${safeStoreCode}', 'perf')" type="button">
+        <svg width='12' height='12' fill='none' stroke='currentColor' viewBox='0 0 24 24' stroke-width='2.2'><path stroke-linecap='round' stroke-linejoin='round' d='M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z'/></svg>
+        📊 Performance Report Cabang
+      </button>
+    ` : '';
+
+    const boundaryStatus = t.has_boundary
+      ? `<div style="font-size:11px;color:#059669;display:flex;align-items:center;gap:4px;background:#ecfdf5;padding:4px 8px;border-radius:6px;border:1px solid #a7f3d0;">
+           <svg width='11' height='11' fill='none' stroke='currentColor' viewBox='0 0 24 24' stroke-width='2.2'><path stroke-linecap='round' stroke-linejoin='round' d='M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z'/></svg>
+           <span>Batas Administratif: <b>${t.admin_name || 'Terpetakan'}</b></span>
+         </div>`
+      : `<div style="font-size:11px;color:#64748b;font-style:italic;background:#f8fafc;padding:4px 8px;border-radius:6px;border:1px dashed #cbd5e1;">Batas wilayah administratif belum tersedia</div>`;
+
+    return `<div style="font-family:Inter,system-ui,sans-serif;width:290px;">
+      <div style="padding:12px 14px 10px;border-bottom:1px solid #f1f5f9;background:linear-gradient(135deg, ${t.color}15, #fff);">
+        <div style="font-size:10px;font-weight:700;color:${t.color};text-transform:uppercase;letter-spacing:0.06em;">Wilayah Coverage Cabang</div>
+        <div style="font-size:13.5px;font-weight:800;color:#1e293b;line-height:1.25;margin-top:2px;">${t.branch_name}</div>
+        <div style="font-size:11px;color:#64748b;margin-top:2px;">Branch Prefix: <b>${t.prefix}</b> ${t.area ? '• ' + t.area : ''}</div>
+      </div>
+      <div style="padding:10px 14px;display:flex;flex-direction:column;gap:8px;">
+        ${boundaryStatus}
+        <div>
+          <div style="font-size:10.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Cakupan Kode Pos (ZIPCODE):</div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;max-height:55px;overflow-y:auto;">
+            ${zipBadges}
+          </div>
+        </div>
+        <div>
+          <div style="font-size:10.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Distribusi Jaringan:</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:11px;">
+            <div style="background:#eff6ff;padding:4px 7px;border-radius:6px;color:#1e40af;font-weight:600;">🏢 ${t.cabang_count} Cabang</div>
+            <div style="background:#fff7ed;padding:4px 7px;border-radius:6px;color:#c2410c;font-weight:600;">🏠 ${t.pos_count} Pos</div>
+            <div style="background:#f0fdf4;padding:4px 7px;border-radius:6px;color:#15803d;font-weight:600;">🏪 ${t.kios_count} Kios</div>
+            <div style="background:#f0fdfa;padding:4px 7px;border-radius:6px;color:#0f766e;font-weight:600;">🏪 ${t.subkios_count} Sub Kios</div>
+          </div>
+          <div style="font-size:11px;font-weight:700;color:#0F3C8C;margin-top:5px;text-align:right;">Total: ${t.total} Lokasi Jaringan</div>
+        </div>
+        ${perfBtn}
+        <button class="popup-perf-btn" style="background:#f8fafc;color:#475569;border:1px solid #cbd5e1;" onclick="resetTerritoryFocus()" type="button">🗺️ Reset Fokus Wilayah</button>
+      </div>
+    </div>`;
+  }
+
+  function populateCoverageSidebar() {
+    const listEl = document.getElementById('coverage-branch-list');
+    if (!listEl) return;
+    listEl.innerHTML = '';
+
+    const list = Object.values(branchTerritories).filter(t => t.prefix !== 'UNASSIGNED');
+    list.sort((a, b) => b.total - a.total);
+
+    if (list.length === 0) {
+      listEl.innerHTML = '<div style="font-size:11px;color:#94a3b8;padding:8px 4px;text-align:center;">Tidak ada wilayah cabang terdeteksi.</div>';
+      return;
+    }
+
+    list.forEach(t => {
+      const zipsArr = Array.from(t.zipcodes).slice(0, 3);
+      const zipPreview = zipsArr.length ? zipsArr.join(', ') + (t.zipcodes.size > 3 ? '...' : '') : '—';
+      const item = document.createElement('div');
+      item.className = 'territory-item-card';
+      item.dataset.prefix = t.prefix;
+      item.style.cssText = 'padding:6px 8px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:6px;';
+      item.innerHTML = `
+        <span style="width:10px;height:10px;border-radius:50%;background:${t.color};flex-shrink:0;box-shadow:0 0 0 2px ${t.color}30;"></span>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:11.5px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.branch_name}</div>
+          <div style="font-size:10px;color:#64748b;">Prefix: <b>${t.prefix}</b> • ZIP: ${zipPreview}</div>
+        </div>
+        <span style="font-size:10.5px;font-weight:700;padding:2px 6px;border-radius:999px;background:#f1f5f9;color:#334155;flex-shrink:0;">${t.total}</span>
+      `;
+      item.onmouseenter = function() { item.style.borderColor = t.color; item.style.background = '#f8fafc'; };
+      item.onmouseleave = function() {
+        if (selectedTerritoryPrefix !== t.prefix) {
+          item.style.borderColor = '#e2e8f0';
+          item.style.background = '#fff';
+        }
+      };
+      item.onclick = function() { selectBranchTerritory(t.prefix); };
+      listEl.appendChild(item);
+    });
+  }
+
+  function filterBranchList(query) {
+    const q = (query || '').toLowerCase().trim();
+    document.querySelectorAll('#coverage-branch-list .territory-item-card').forEach(card => {
+      const prefix = card.dataset.prefix;
+      const t = branchTerritories[prefix];
+      if (!t) return;
+      const matchName = t.branch_name.toLowerCase().includes(q);
+      const matchPrefix = t.prefix.toLowerCase().includes(q);
+      const matchAdmin = (t.admin_name || '').toLowerCase().includes(q);
+      const matchZip = Array.from(t.zipcodes).some(z => z.toLowerCase().includes(q));
+      card.style.display = (matchName || matchPrefix || matchAdmin || matchZip || !q) ? 'flex' : 'none';
+    });
+  }
+
+  function selectBranchTerritory(prefix) {
+    selectedTerritoryPrefix = prefix;
+
+    Object.keys(territoryLayers).forEach(p => {
+      const layer = territoryLayers[p];
+      if (p === prefix) {
+        layer.setStyle({ fillOpacity: 0.42, weight: 3.5, opacity: 1 });
+        if (layer.bringToFront) layer.bringToFront();
+      } else {
+        layer.setStyle({ fillOpacity: 0.04, weight: 1.2, opacity: 0.25 });
+      }
+    });
+
+    document.querySelectorAll('#coverage-branch-list .territory-item-card').forEach(el => {
+      const isSel = el.dataset.prefix === prefix;
+      el.style.borderColor = isSel ? '#2563eb' : '#e2e8f0';
+      el.style.background = isSel ? '#eff6ff' : '#fff';
+    });
+
+    const targetLayer = territoryLayers[prefix];
+    if (targetLayer) {
+      if (targetLayer.getBounds && targetLayer.getBounds().isValid()) {
+        map.fitBounds(targetLayer.getBounds(), { padding: [60, 60], maxZoom: 13 });
+        const center = targetLayer.getBounds().getCenter();
+        L.popup({ maxWidth: 320, className: 'custom-popup' })
+          .setLatLng(center)
+          .setContent(buildTerritoryPopup(branchTerritories[prefix]))
+          .openOn(map);
+      }
+    } else {
+      // Fallback if no real boundary layer: focus on branch locations
+      const t = branchTerritories[prefix];
+      if (t && t.locations.length > 0) {
+        const coords = t.locations.map(l => [l.latitude, l.longitude]).filter(c => c[0] != null && c[1] != null);
+        if (coords.length > 0) {
+          const bounds = L.latLngBounds(coords);
+          if (bounds.isValid()) {
+            map.fitBounds(bounds, { padding: [60, 60], maxZoom: 13 });
+            L.popup({ maxWidth: 320, className: 'custom-popup' })
+              .setLatLng(bounds.getCenter())
+              .setContent(buildTerritoryPopup(t))
+              .openOn(map);
+          }
+        }
+      }
+    }
+  }
+
+  function resetTerritoryFocus() {
+    selectedTerritoryPrefix = null;
+    Object.values(territoryLayers).forEach(layer => {
+      layer.setStyle({ fillOpacity: 0.16, weight: 2.2, opacity: 0.85 });
+    });
+    document.querySelectorAll('#coverage-branch-list .territory-item-card').forEach(el => {
+      el.style.borderColor = '#e2e8f0';
+      el.style.background = '#fff';
+    });
+    if (territoryGroup && territoryGroup.getBounds().isValid()) {
+      map.fitBounds(territoryGroup.getBounds(), { padding: [40, 40], maxZoom: 11 });
+    }
+    map.closePopup();
+  }
 
   function initMap() {
     map = L.map('leaflet-map', { center: INDONESIA_CENTER, zoom: INDONESIA_ZOOM });
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
       attribution: '&copy; OpenStreetMap &copy; CARTO', subdomains: 'abcd', maxZoom: 19
     }).addTo(map);
+
+    territoryGroup = L.featureGroup();
+    map.addLayer(territoryGroup);
 
     clusterGroup = L.markerClusterGroup({
       showCoverageOnHover: false,
@@ -1870,12 +2264,27 @@
 
   async function loadMapData() {
     try {
-      const res = await fetch(API_URL);
-      const data = await res.json();
-      allLocs = data.locations;
-      document.getElementById('stat-displayed').textContent = data.stats.with_coords;
-      document.getElementById('stat-filtered').textContent = data.stats.total;
+      // Load location data and real administrative boundary GeoJSON in parallel
+      const [resMap] = await Promise.all([
+        fetch(API_URL).then(r => r.json()),
+        loadBoundaryGeoJSON()
+      ]);
+
+      allLocs = resMap.locations;
+      document.getElementById('stat-displayed').textContent = resMap.stats.with_coords;
+      document.getElementById('stat-filtered').textContent = resMap.stats.total;
+
+      // Build branch coverage territories using real boundaries
+      buildBranchTerritories(allLocs);
+      renderTerritoryPolygons();
+      populateCoverageSidebar();
+
       renderMarkers(allLocs);
+
+      // If coverage mode selected initially
+      if (currentMode === 'coverage') {
+        setMode('coverage');
+      }
     } catch (e) {
       console.error('Map data error:', e);
     } finally {
@@ -1892,6 +2301,13 @@
       marker.bindPopup(buildPopup(loc), { maxWidth: 300, className: 'custom-popup' });
       marker.bindTooltip(`<b>${loc.business_name || loc.store_code}</b> — ${loc.network_type || 'Lokasi'} (${loc.status})`,
         { direction: 'top', offset: [0, -30] });
+
+      marker.on('click', () => {
+        if (currentMode === 'coverage' && loc.branch_prefix && territoryLayers[loc.branch_prefix]) {
+          selectBranchTerritory(loc.branch_prefix);
+        }
+      });
+
       clusterGroup.addLayer(marker);
     });
     if (locs.length > 0 && clusterGroup.getBounds().isValid()) {
@@ -1907,12 +2323,14 @@
         const el = document.getElementById(ids[s]); return el ? el.checked : true;
       });
       filtered = allLocs.filter(l => active.includes(l.status));
-    } else {
+    } else if (currentMode === 'network') {
       const active = ['Cabang', 'Pos', 'Kios', 'Subkios', 'Lainnya'].filter(n => {
         const ids = { 'Cabang': 'cb-cabang', 'Pos': 'cb-pos', 'Kios': 'cb-kios', 'Subkios': 'cb-subkios', 'Lainnya': 'cb-lainnya' };
         const el = document.getElementById(ids[n]); return el ? el.checked : true;
       });
       filtered = allLocs.filter(l => active.includes(normalizeNetworkType(l.network_type)));
+    } else {
+      filtered = allLocs;
     }
     renderMarkers(filtered);
     document.getElementById('stat-displayed').textContent = filtered.length;
@@ -1921,16 +2339,44 @@
 
   function setMode(mode) {
     currentMode = mode;
-    ['status', 'network'].forEach(m => {
+    ['status', 'network', 'coverage'].forEach(m => {
       const btn = document.getElementById('btn-mode-' + m);
       if (btn) btn.classList.toggle('active', m === mode);
     });
+
     const ps = document.getElementById('panel-filter-status');
     const pn = document.getElementById('panel-filter-network');
+    const pc = document.getElementById('panel-filter-coverage');
+
     if (ps) ps.style.display = mode === 'status' ? 'block' : 'none';
     if (pn) pn.style.display = mode === 'network' ? 'block' : 'none';
-    renderMarkers(allLocs);
-    applyFilters();
+    if (pc) pc.style.display = mode === 'coverage' ? 'block' : 'none';
+
+    const ls = document.getElementById('legend-status');
+    const ln = document.getElementById('legend-network');
+    const lc = document.getElementById('legend-coverage');
+    if (ls) ls.style.display = mode === 'status' ? 'block' : 'none';
+    if (ln) ln.style.display = mode === 'network' ? 'block' : 'none';
+    if (lc) lc.style.display = mode === 'coverage' ? 'block' : 'none';
+
+    if (mode === 'coverage') {
+      if (territoryGroup && !map.hasLayer(territoryGroup)) {
+        map.addLayer(territoryGroup);
+      }
+      renderTerritoryPolygons();
+      populateCoverageSidebar();
+      renderMarkers(allLocs);
+      if (territoryGroup && territoryGroup.getBounds().isValid()) {
+        map.fitBounds(territoryGroup.getBounds(), { padding: [40, 40], maxZoom: 11 });
+      }
+    } else {
+      if (territoryGroup && map.hasLayer(territoryGroup)) {
+        map.removeLayer(territoryGroup);
+      }
+      resetTerritoryFocus();
+      renderMarkers(allLocs);
+      applyFilters();
+    }
   }
 
   function openCoordModal() { const m = document.getElementById('coord-modal'); if (m) { m.style.display = 'flex'; document.body.style.overflow = 'hidden'; } }

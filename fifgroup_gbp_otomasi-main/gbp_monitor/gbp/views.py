@@ -391,6 +391,23 @@ class MapDataAPIView(View):
                 return "Need Verification"
             return "Need Verification"
 
+        import re
+
+        def extract_zipcode(address_str):
+            """Ekstrak 5-digit kode pos Indonesia dari string alamat."""
+            if not address_str:
+                return ""
+            m = re.search(r"\b(\d{5})\b", str(address_str))
+            return m.group(1) if m else ""
+
+        def extract_branch_prefix(sc_str):
+            """Ambil 3 digit prefix cabang dari store code yang dinormalisasi."""
+            if not sc_str:
+                return ""
+            s = str(sc_str).strip().split(".")[0]
+            clean = re.sub(r"[^\d]", "", s)
+            return clean[:3] if len(clean) >= 3 else ""
+
         locations = []
         with_coords = 0
         without_coords = 0
@@ -416,12 +433,17 @@ class MapDataAPIView(View):
             network_type = normalize_network_type(raw_network, business_name=b_name, store_code=sc)
 
             status_normalized = normalize_status(s.get("status", ""))
+            addr = s.get("address") or ""
+            zipcode = extract_zipcode(addr)
+            prefix = extract_branch_prefix(sc)
 
             locations.append({
                 "id": s["id"],
                 "store_code": sc,
+                "branch_prefix": prefix,
+                "zipcode": zipcode,
                 "business_name": s.get("business_name") or "",
-                "address": (s.get("address") or "")[:120],
+                "address": addr[:150],
                 "latitude": s["latitude"],
                 "longitude": s["longitude"],
                 "status": status_normalized,
@@ -443,6 +465,35 @@ class MapDataAPIView(View):
                 "total": len(snapshots),
             },
         })
+
+
+_BOUNDARIES_CACHE = None
+
+class BranchBoundariesAPIView(View):
+    """
+    Endpoint JSON yang menyajikan data GeoJSON batas administratif asli
+    (administrative boundaries) untuk setiap cabang / wilayah cakupan.
+
+    GET /api/branch-boundaries/
+    """
+    def get(self, request: HttpRequest) -> JsonResponse:
+        global _BOUNDARIES_CACHE
+        if _BOUNDARIES_CACHE is not None:
+            return JsonResponse(_BOUNDARIES_CACHE)
+
+        import os, json
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        geojson_path = os.path.join(base_dir, "static", "gbp", "data", "geojson", "branch_boundaries.geojson")
+
+        if os.path.exists(geojson_path):
+            try:
+                with open(geojson_path, "r", encoding="utf-8") as f:
+                    _BOUNDARIES_CACHE = json.load(f)
+                return JsonResponse(_BOUNDARIES_CACHE)
+            except Exception as e:
+                return JsonResponse({"type": "FeatureCollection", "features": [], "error": str(e)})
+
+        return JsonResponse({"type": "FeatureCollection", "features": []})
 
 
 # ══════════════════════════════════════════════════════════════════════
