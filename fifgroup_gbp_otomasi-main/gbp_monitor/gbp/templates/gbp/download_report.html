@@ -10,10 +10,22 @@
 {% block content %}
 <div class="max-w-5xl mx-auto space-y-6">
 
-  <!-- Header -->
-  <div>
-    <h1 class="text-2xl font-display font-bold text-[#0F172A] tracking-tight">Download Report</h1>
-    <p class="text-sm text-[#8C8AA0] mt-1">Export data rekonsiliasi verifikasi dalam format CSV atau Excel</p>
+  <!-- ── Page Header ─────────────────────────────────────── -->
+  <div class="dash-card mb-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div>
+        <h1 class="text-xl font-display font-bold text-primary leading-tight">Download &amp; Export Report</h1>
+        <p class="text-sm text-[#8C8AA0] mt-1">Export data rekonsiliasi verifikasi dan laporan kinerja outlet dalam format CSV atau Excel.</p>
+      </div>
+      <div class="flex flex-col sm:items-end gap-1 flex-shrink-0">
+        <span class="text-[10px] font-semibold text-[#8C8AA0] uppercase tracking-wider">Format Export</span>
+        <span class="text-sm font-display font-bold text-primary">Excel (.xlsx) &amp; CSV</span>
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-700">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          {{ recon_jobs|length }} Riwayat Rekonsiliasi
+        </span>
+      </div>
+    </div>
   </div>
 
   <!-- ── Reconciliation History Download ──────────────────────── -->

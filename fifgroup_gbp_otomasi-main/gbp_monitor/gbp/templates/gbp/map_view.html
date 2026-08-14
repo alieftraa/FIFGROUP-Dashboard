@@ -804,7 +804,7 @@
         <select name="run_id" onchange="this.form.submit()"
           style="font-size:11px;padding:4px 8px;border-radius:7px;border:1px solid #e2e8f0;background:white;outline:none;">
           {% for run in all_runs %}
-          <option value="{{ run.run_id }}" {% if run.run_id==sel_run_id %}selected{% endif %}>
+          <option value="{{ run.run_id }}" {% if run.run_id == sel_run_id %}selected{% endif %}>
             #{{ run.run_id }} — {{ run.run_date }} ({{ run.total }} lokasi)
           </option>
           {% endfor %}
@@ -860,7 +860,7 @@
             style="width:100%;padding:6px 8px;font-size:11.5px;border-radius:7px;border:1px solid #e2e8f0;background:white;outline:none;">
             <option value="">— Semua Cabang —</option>
             {% for b in branch_list %}
-            <option value="{{ b.prefix }}" {% if b.prefix==selected_branch_prefix %}selected{% endif %}>
+            <option value="{{ b.prefix }}" {% if b.prefix == selected_branch_prefix %}selected{% endif %}>
               {{ b.name }} ({{ b.prefix }}) — {{ b.total_covered }}
             </option>
             {% endfor %}
@@ -1207,15 +1207,15 @@
         <div class="sb-label">Filter Network</div>
         <div style="display:flex;flex-direction:column;gap:4px;">
           <label class="filter-chip"><input type="checkbox" id="cb-cabang" value="Cabang" checked><span class="chip-dot"
-              style="background:#3b82f6;"></span><span style="color:#1d4ed8;">Cabang</span></label>
+              style="background:#2563eb;"></span><span style="color:#1d4ed8;">Cabang</span></label>
           <label class="filter-chip"><input type="checkbox" id="cb-pos" value="Pos" checked><span class="chip-dot"
-              style="background:#8b5cf6;"></span><span style="color:#5b21b6;">Pos</span></label>
+              style="background:#f97316;"></span><span style="color:#c2410c;">Pos</span></label>
           <label class="filter-chip"><input type="checkbox" id="cb-kios" value="Kios" checked><span class="chip-dot"
-              style="background:#f97316;"></span><span style="color:#c2410c;">Kios</span></label>
+              style="background:#22c55e;"></span><span style="color:#15803d;">Kios</span></label>
           <label class="filter-chip"><input type="checkbox" id="cb-subkios" value="Subkios" checked><span
-              class="chip-dot" style="background:#06b6d4;"></span><span style="color:#0e7490;">Sub Kios</span></label>
+              class="chip-dot" style="background:#0d9488;"></span><span style="color:#0f766e;">Sub Kios</span></label>
           <label class="filter-chip"><input type="checkbox" id="cb-lainnya" value="Lainnya" checked><span
-              class="chip-dot" style="background:#94a3b8;"></span><span style="color:#475569;">Lainnya</span></label>
+              class="chip-dot" style="background:#64748b;"></span><span style="color:#475569;">Lainnya</span></label>
         </div>
         <button class="apply-btn" onclick="applyFilters()">Terapkan Filter</button>
       </div>
@@ -1265,50 +1265,45 @@
 
       <!-- Legend -->
       <div class="sb-section">
-        <div class="sb-label">Legenda</div>
+        <div class="sb-label">Legenda Peta</div>
         <div
-          style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;margin-top:2px;">
-          Warna Status</div>
-        <div style="display:flex;flex-direction:column;gap:2px;margin-bottom:8px;">
+          style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;margin-top:2px;">
+          Jenis Network (Marker)</div>
+        <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px;">
+          <div class="legend-item">
+            <div class="legend-icon-wrap"><svg width="15" height="17" viewBox="0 0 30 34"><path d="M15 2L3 9.5v19a1.5 1.5 0 001.5 1.5h21a1.5 1.5 0 001.5-1.5V9.5L15 2z" fill="#2563eb"/><rect x="7" y="11" width="4.5" height="4.5" fill="white"/><rect x="18.5" y="11" width="4.5" height="4.5" fill="white"/><rect x="7" y="18" width="4.5" height="4.5" fill="white"/><rect x="18.5" y="18" width="4.5" height="4.5" fill="white"/><path d="M13 22h4v8h-4z" fill="white"/></svg></div>
+            <span style="font-weight:600;color:#1e40af;">Cabang</span>
+            <span style="font-size:9.5px;color:#94a3b8;margin-left:auto;">Blue (Gedung)</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-icon-wrap"><svg width="15" height="17" viewBox="0 0 30 34"><path d="M15 2L1.5 13.5l2.5 2 1.5-1.2V28a2 2 0 002 2h15a2 2 0 002-2V14.3l1.5 1.2 2.5-2L15 2z" fill="#f97316"/><rect x="12" y="19" width="6" height="11" fill="white"/><rect x="7.5" y="16" width="3.5" height="4" fill="white"/><rect x="19" y="16" width="3.5" height="4" fill="white"/></svg></div>
+            <span style="font-weight:600;color:#c2410c;">Pos</span>
+            <span style="font-size:9.5px;color:#94a3b8;margin-left:auto;">Orange (Rumah)</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-icon-wrap"><svg width="15" height="17" viewBox="0 0 30 34"><rect x="3" y="13" width="24" height="17" rx="2" fill="#22c55e"/><path d="M2 13l3.5-9h19l3.5 9z" fill="#22c55e"/><path d="M8.5 4v9M15 4v9M21.5 4v9" stroke="white" stroke-width="1.6"/><rect x="6" y="18" width="7.5" height="7.5" fill="white"/><rect x="16.5" y="18" width="7.5" height="12" fill="white"/></svg></div>
+            <span style="font-weight:600;color:#15803d;">Kios</span>
+            <span style="font-size:9.5px;color:#94a3b8;margin-left:auto;">Light Green (Toko)</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-icon-wrap"><svg width="15" height="17" viewBox="0 0 30 34"><rect x="3" y="13" width="24" height="17" rx="2" fill="#0d9488"/><path d="M2 13l3.5-9h19l3.5 9z" fill="#0d9488"/><path d="M8.5 4v9M15 4v9M21.5 4v9" stroke="white" stroke-width="1.6"/><rect x="6" y="18" width="7.5" height="7.5" fill="white"/><rect x="16.5" y="18" width="7.5" height="12" fill="white"/></svg></div>
+            <span style="font-weight:600;color:#0f766e;">Sub Kios</span>
+            <span style="font-size:9.5px;color:#94a3b8;margin-left:auto;">Teal Green (Toko)</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-icon-wrap"><svg width="14" height="16" viewBox="0 0 26 30"><path d="M13 2C7.5 2 3 6.5 3 12c0 7.5 10 16 10 16s10-8.5 10-16c0-5.5-4.5-10-10-10z" fill="#64748b"/><circle cx="13" cy="11" r="3.5" fill="white"/></svg></div>
+            <span style="font-weight:600;color:#475569;">Lainnya</span>
+            <span style="font-size:9.5px;color:#94a3b8;margin-left:auto;">Gray</span>
+          </div>
+        </div>
+        <div
+          style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;border-top:1px solid #f1f5f9;padding-top:6px;">
+          Status Verifikasi</div>
+        <div style="display:flex;flex-direction:column;gap:2px;">
           <div class="legend-item"><span class="legend-dot" style="background:#22c55e;"></span>Verified</div>
           <div class="legend-item"><span class="legend-dot" style="background:#f59e0b;"></span>Need Verification</div>
           <div class="legend-item"><span class="legend-dot" style="background:#f97316;"></span>Duplicate</div>
           <div class="legend-item"><span class="legend-dot" style="background:#ef4444;"></span>Suspended</div>
-          <div class="legend-item"><span class="legend-dot" style="background:#94a3b8;"></span>Unknown</div>
-        </div>
-        <div
-          style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">
-          Ikon Jenis Network</div>
-        <div style="display:flex;flex-direction:column;gap:2px;">
-          <div class="legend-item">
-            <div class="legend-icon-wrap"><svg width="14" height="14" viewBox="0 0 28 32" fill="#3b82f6">
-                <path d="M14 2L2 10v16a2 2 0 002 2h7v-7h6v7h7a2 2 0 002-2V10z" />
-              </svg></div>
-            Cabang (Gedung)
-          </div>
-          <div class="legend-item">
-            <div class="legend-icon-wrap"><svg width="14" height="14" viewBox="0 0 28 32" fill="#8b5cf6">
-                <path d="M14 2L1 13h3v12a1 1 0 001 1h4v-8h10v8h4a1 1 0 001-1V13h3z" />
-              </svg></div>
-            Pos (Rumah)
-          </div>
-          <div class="legend-item">
-            <div class="legend-icon-wrap"><svg width="14" height="14" viewBox="0 0 28 32" fill="none" stroke="#f97316"
-                stroke-width="2">
-                <rect x="2" y="12" width="24" height="15" rx="2" />
-                <path d="M2 12l3-7h18l3 7" />
-              </svg></div>
-            Kios (Toko)
-          </div>
-          <div class="legend-item">
-            <div class="legend-icon-wrap"><svg width="14" height="14" viewBox="0 0 28 32" fill="none" stroke="#06b6d4"
-                stroke-width="2">
-                <rect x="2" y="12" width="24" height="15" rx="2" />
-                <path d="M2 12l3-7h18l3 7" />
-                <circle cx="14" cy="20" r="3" fill="#06b6d4" />
-              </svg></div>
-            Sub Kios (Toko+)
-          </div>
         </div>
       </div>
 
@@ -1533,7 +1528,7 @@
 
 <!-- ═══ COORD ISSUE MODAL ═══ -->
 {% if coord_issues %}
-<div id="coord-modal" class="modal-backdrop" style="display:none;" onclick="if(event.target===this)closeCoordModal()">
+<div id="coord-modal" class="modal-backdrop" style="display:none;" onclick="if(event.target ===this)closeCoordModal()">
   <div class="modal-box">
     <div class="modal-header">
       <div style="display:flex;align-items:center;gap:10px;">
@@ -1603,7 +1598,7 @@
   const INDONESIA_CENTER = [-2.5, 118.0];
   const INDONESIA_ZOOM = 5;
 
-  /* Status → color */
+  /* ── Status Colors ── */
   const STATUS_COLORS = {
     'Verified': '#22c55e',
     'Need Verification': '#f59e0b',
@@ -1612,60 +1607,222 @@
   };
   function getStatusColor(s) { return STATUS_COLORS[s] || '#94a3b8'; }
 
-  /* Network → color (for network mode) */
-  const NET_COLORS = {
-    'Cabang': '#3b82f6',
-    'Pos': '#8b5cf6',
-    'Kios': '#f97316',
-    'Subkios': '#06b6d4',
-    'Lainnya': '#94a3b8',
+  /* ─────────────────────────────────────────────────────────────
+     Network Type Config, Colors, and Normalization
+     ───────────────────────────────────────────────────────────── */
+
+  const NETWORK_CONFIG = {
+    'Cabang': {
+      key: 'Cabang',
+      label: 'Cabang',
+      color: '#2563eb',       // Blue
+      border: '#1d4ed8',
+      bgLight: 'rgba(37, 99, 235, 0.12)',
+      textDark: '#1e40af',
+      desc: 'Building / Office'
+    },
+    'Pos': {
+      key: 'Pos',
+      label: 'Pos',
+      color: '#f97316',       // Orange
+      border: '#ea580c',
+      bgLight: 'rgba(249, 115, 22, 0.12)',
+      textDark: '#c2410c',
+      desc: 'House / Home'
+    },
+    'Kios': {
+      key: 'Kios',
+      label: 'Kios',
+      color: '#22c55e',       // Light Green
+      border: '#16a34a',
+      bgLight: 'rgba(34, 197, 94, 0.12)',
+      textDark: '#15803d',
+      desc: 'Kiosk / Shop'
+    },
+    'Subkios': {
+      key: 'Subkios',
+      label: 'Sub Kios',
+      color: '#0d9488',       // Darker Green / Teal Green
+      border: '#0f766e',
+      bgLight: 'rgba(13, 148, 136, 0.12)',
+      textDark: '#115e59',
+      desc: 'Sub Kiosk / Shop'
+    },
+    'Lainnya': {
+      key: 'Lainnya',
+      label: 'Lainnya',
+      color: '#64748b',       // Neutral Gray
+      border: '#475569',
+      bgLight: 'rgba(100, 116, 139, 0.12)',
+      textDark: '#334155',
+      desc: 'Unknown / Other'
+    }
   };
-  function getNetColor(n) { return NET_COLORS[n] || '#94a3b8'; }
 
-  /* ── SVG marker creators ── */
-  function svgCabang(c, b) {
-    return `<svg xmlns='http://www.w3.org/2000/svg' width='28' height='32' viewBox='0 0 28 32'><defs><filter id='sh'><feDropShadow dx='0' dy='2' stdDeviation='1.5' flood-opacity='0.3'/></filter></defs><g filter='url(#sh)'><path d='M14 2L2 10v16a2 2 0 002 2h7v-7h6v7h7a2 2 0 002-2V10z' fill='${c}' stroke='${b}' stroke-width='1.2'/><rect x='6' y='14' width='4' height='4' rx='0.5' fill='white' opacity='0.7'/><rect x='18' y='14' width='4' height='4' rx='0.5' fill='white' opacity='0.7'/></g></svg>`;
-  }
-  function svgPos(c, b) {
-    return `<svg xmlns='http://www.w3.org/2000/svg' width='28' height='32' viewBox='0 0 28 32'><defs><filter id='sh2'><feDropShadow dx='0' dy='2' stdDeviation='1.5' flood-opacity='0.3'/></filter></defs><g filter='url(#sh2)'><path d='M14 2L1 13h3v12a1 1 0 001 1h4v-8h10v8h4a1 1 0 001-1V13h3z' fill='${c}' stroke='${b}' stroke-width='1.2'/><rect x='11' y='18' width='6' height='7' rx='0.5' fill='white' opacity='0.6'/></g></svg>`;
-  }
-  function svgKios(c, b) {
-    return `<svg xmlns='http://www.w3.org/2000/svg' width='28' height='32' viewBox='0 0 28 32'><defs><filter id='sh3'><feDropShadow dx='0' dy='2' stdDeviation='1.5' flood-opacity='0.3'/></filter></defs><g filter='url(#sh3)'><rect x='2' y='13' width='24' height='14' rx='2' fill='${c}' stroke='${b}' stroke-width='1.2'/><path d='M2 13l3-7h18l3 7z' fill='${c}' stroke='${b}' stroke-width='1.2' stroke-linejoin='round'/><rect x='5' y='17' width='7' height='7' rx='1' fill='white' opacity='0.65'/><rect x='16' y='17' width='7' height='7' rx='1' fill='white' opacity='0.65'/></g></svg>`;
-  }
-  function svgSubkios(c, b) {
-    return `<svg xmlns='http://www.w3.org/2000/svg' width='28' height='32' viewBox='0 0 28 32'><defs><filter id='sh4'><feDropShadow dx='0' dy='2' stdDeviation='1.5' flood-opacity='0.3'/></filter></defs><g filter='url(#sh4)'><rect x='2' y='13' width='24' height='14' rx='2' fill='${c}' stroke='${b}' stroke-width='1.2'/><path d='M2 13l3-7h18l3 7z' fill='${c}' stroke='${b}' stroke-width='1.2' stroke-linejoin='round'/><rect x='5' y='17' width='7' height='7' rx='1' fill='white' opacity='0.65'/><rect x='16' y='17' width='7' height='7' rx='1' fill='white' opacity='0.65'/><circle cx='14' cy='20.5' r='2.5' fill='white' opacity='0.9'/></g></svg>`;
-  }
-  function svgPin(c, b) {
-    return `<svg xmlns='http://www.w3.org/2000/svg' width='24' height='28' viewBox='0 0 24 28'><defs><filter id='sh5'><feDropShadow dx='0' dy='2' stdDeviation='1.5' flood-opacity='0.25'/></filter></defs><g filter='url(#sh5)'><path d='M12 2C7.03 2 3 6.03 3 11c0 7.25 9 17 9 17s9-9.75 9-17c0-4.97-4.03-9-9-9z' fill='${c}' stroke='${b}' stroke-width='1.1'/><circle cx='12' cy='11' r='3' fill='white' opacity='0.75'/></g></svg>`;
+  /**
+   * Normalizes raw network type string variants to canonical keys:
+   * "Cabang", "Pos", "Kios", "Subkios", "Lainnya"
+   */
+  function normalizeNetworkType(val) {
+    if (!val) return 'Lainnya';
+    const s = String(val).trim().toLowerCase().replace(/[_\s-]+/g, ' ');
+    if (s === 'cabang' || s === 'branch' || s.includes('cabang') || s.includes('branch')) return 'Cabang';
+    if (s === 'pos' || s.startsWith('pos ') || s.endsWith(' pos')) return 'Pos';
+    if (s.includes('sub kios') || s.includes('subkios') || s.includes('sub-kios')) return 'Subkios';
+    if (s.includes('kios') || s.includes('kiosk')) return 'Kios';
+    return 'Lainnya';
   }
 
-  function makeIcon(loc, mode) {
-    const nt = loc.network_type;
-    const fill = mode === 'network' ? getNetColor(nt) : getStatusColor(loc.status);
-    const border = fill;
-    let svg, w, h;
-    if (nt === 'Cabang') { svg = svgCabang(fill, border); w = 28; h = 32; }
-    else if (nt === 'Pos') { svg = svgPos(fill, border); w = 28; h = 32; }
-    else if (nt === 'Kios') { svg = svgKios(fill, border); w = 28; h = 32; }
-    else if (nt === 'Subkios') { svg = svgSubkios(fill, border); w = 28; h = 32; }
-    else { svg = svgPin(fill, border); w = 24; h = 28; }
-    return L.divIcon({ html: svg, iconSize: [w, h], iconAnchor: [w / 2, h], popupAnchor: [0, -h], className: '' });
+  function getNetConfig(val) {
+    const key = normalizeNetworkType(val);
+    return NETWORK_CONFIG[key] || NETWORK_CONFIG['Lainnya'];
+  }
+
+  function getNetColor(val) {
+    return getNetConfig(val).color;
+  }
+
+  function getNetBg(val) {
+    return getNetConfig(val).bgLight;
+  }
+
+  /* ── SVG Marker Creators ── */
+
+  // 1. CABANG (Blue + Building Icon)
+  function svgCabang(color = '#2563eb', border = '#1d4ed8') {
+    return `<svg xmlns='http://www.w3.org/2000/svg' width='30' height='34' viewBox='0 0 30 34'>
+      <defs>
+        <filter id='sh-cb' x='-20%' y='-20%' width='140%' height='140%'>
+          <feDropShadow dx='0' dy='2.5' stdDeviation='1.8' flood-color='#0f172a' flood-opacity='0.35'/>
+        </filter>
+      </defs>
+      <g filter='url(#sh-cb)'>
+        <path d='M15 2L3 9.5v19a1.5 1.5 0 001.5 1.5h21a1.5 1.5 0 001.5-1.5V9.5L15 2z' fill='${color}' stroke='${border}' stroke-width='1.5'/>
+        <rect x='7' y='11' width='4.5' height='4.5' rx='0.8' fill='white'/>
+        <rect x='18.5' y='11' width='4.5' height='4.5' rx='0.8' fill='white'/>
+        <rect x='7' y='18' width='4.5' height='4.5' rx='0.8' fill='white'/>
+        <rect x='18.5' y='18' width='4.5' height='4.5' rx='0.8' fill='white'/>
+        <path d='M13 22h4v8h-4z' fill='white'/>
+      </g>
+    </svg>`;
+  }
+
+  // 2. POS (Orange + House Icon)
+  function svgPos(color = '#f97316', border = '#ea580c') {
+    return `<svg xmlns='http://www.w3.org/2000/svg' width='30' height='34' viewBox='0 0 30 34'>
+      <defs>
+        <filter id='sh-pos' x='-20%' y='-20%' width='140%' height='140%'>
+          <feDropShadow dx='0' dy='2.5' stdDeviation='1.8' flood-color='#0f172a' flood-opacity='0.35'/>
+        </filter>
+      </defs>
+      <g filter='url(#sh-pos)'>
+        <path d='M15 2L1.5 13.5l2.5 2 1.5-1.2V28a2 2 0 002 2h15a2 2 0 002-2V14.3l1.5 1.2 2.5-2L15 2z' fill='${color}' stroke='${border}' stroke-width='1.5'/>
+        <rect x='12' y='19' width='6' height='11' rx='0.75' fill='white'/>
+        <rect x='7.5' y='16' width='3.5' height='4' rx='0.75' fill='white'/>
+        <rect x='19' y='16' width='3.5' height='4' rx='0.75' fill='white'/>
+      </g>
+    </svg>`;
+  }
+
+  // 3. KIOS (Light Green + Shop/Booth Icon)
+  function svgKios(color = '#22c55e', border = '#16a34a') {
+    return `<svg xmlns='http://www.w3.org/2000/svg' width='30' height='34' viewBox='0 0 30 34'>
+      <defs>
+        <filter id='sh-kios' x='-20%' y='-20%' width='140%' height='140%'>
+          <feDropShadow dx='0' dy='2.5' stdDeviation='1.8' flood-color='#0f172a' flood-opacity='0.35'/>
+        </filter>
+      </defs>
+      <g filter='url(#sh-kios)'>
+        <rect x='3' y='13' width='24' height='17' rx='2' fill='${color}' stroke='${border}' stroke-width='1.5'/>
+        <path d='M2 13l3.5-9h19l3.5 9z' fill='${color}' stroke='${border}' stroke-width='1.5' stroke-linejoin='round'/>
+        <path d='M8.5 4v9M15 4v9M21.5 4v9' stroke='white' stroke-width='1.6' opacity='0.9'/>
+        <rect x='6' y='18' width='7.5' height='7.5' rx='1' fill='white' opacity='0.95'/>
+        <rect x='16.5' y='18' width='7.5' height='12' rx='0.5' fill='white' opacity='0.95'/>
+      </g>
+    </svg>`;
+  }
+
+  // 4. SUB KIOS (Darker Green / Teal Green + Same Shop/Booth Icon)
+  function svgSubkios(color = '#0d9488', border = '#0f766e') {
+    return `<svg xmlns='http://www.w3.org/2000/svg' width='30' height='34' viewBox='0 0 30 34'>
+      <defs>
+        <filter id='sh-subkios' x='-20%' y='-20%' width='140%' height='140%'>
+          <feDropShadow dx='0' dy='2.5' stdDeviation='1.8' flood-color='#0f172a' flood-opacity='0.35'/>
+        </filter>
+      </defs>
+      <g filter='url(#sh-subkios)'>
+        <rect x='3' y='13' width='24' height='17' rx='2' fill='${color}' stroke='${border}' stroke-width='1.5'/>
+        <path d='M2 13l3.5-9h19l3.5 9z' fill='${color}' stroke='${border}' stroke-width='1.5' stroke-linejoin='round'/>
+        <path d='M8.5 4v9M15 4v9M21.5 4v9' stroke='white' stroke-width='1.6' opacity='0.9'/>
+        <rect x='6' y='18' width='7.5' height='7.5' rx='1' fill='white' opacity='0.95'/>
+        <rect x='16.5' y='18' width='7.5' height='12' rx='0.5' fill='white' opacity='0.95'/>
+      </g>
+    </svg>`;
+  }
+
+  // 5. LAINNYA / UNKNOWN (Neutral Gray + Generic Pin)
+  function svgLainnya(color = '#64748b', border = '#475569') {
+    return `<svg xmlns='http://www.w3.org/2000/svg' width='26' height='30' viewBox='0 0 26 30'>
+      <defs>
+        <filter id='sh-oth' x='-20%' y='-20%' width='140%' height='140%'>
+          <feDropShadow dx='0' dy='2' stdDeviation='1.5' flood-color='#0f172a' flood-opacity='0.3'/>
+        </filter>
+      </defs>
+      <g filter='url(#sh-oth)'>
+        <path d='M13 2C7.5 2 3 6.5 3 12c0 7.5 10 16 10 16s10-8.5 10-16c0-5.5-4.5-10-10-10z' fill='${color}' stroke='${border}' stroke-width='1.3'/>
+        <circle cx='13' cy='11' r='3.5' fill='white'/>
+      </g>
+    </svg>`;
+  }
+
+  function makeIcon(loc) {
+    const nt = normalizeNetworkType(loc.network_type);
+    let svg, w = 30, h = 34;
+    if (nt === 'Cabang') {
+      svg = svgCabang();
+    } else if (nt === 'Pos') {
+      svg = svgPos();
+    } else if (nt === 'Kios') {
+      svg = svgKios();
+    } else if (nt === 'Subkios') {
+      svg = svgSubkios();
+    } else {
+      svg = svgLainnya();
+      w = 26; h = 30;
+    }
+    return L.divIcon({
+      html: svg,
+      iconSize: [w, h],
+      iconAnchor: [w / 2, h],
+      popupAnchor: [0, -h],
+      className: 'fif-network-marker'
+    });
   }
 
   function buildPopup(loc) {
     const sc = getStatusColor(loc.status);
-    const nc = getNetColor(loc.network_type);
+    const netCfg = getNetConfig(loc.network_type);
+    const nc = netCfg.color;
+    const nBg = netCfg.bgLight;
+    const nLabel = netCfg.label;
     const mapsLink = loc.maps_uri
       ? `<a href="${loc.maps_uri}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;color:#7c3aed;font-size:11px;font-weight:600;text-decoration:none;margin-top:6px;"><svg width='11' height='11' fill='none' stroke='currentColor' viewBox='0 0 24 24' stroke-width='2'><path d='M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14'/></svg>Google Maps</a>`
       : '';
 
-    // Performance button — hanya untuk Cabang
-    const perfBtn = loc.network_type === 'Cabang'
-      ? `<button class="popup-perf-btn" onclick="openPerfPanel(${JSON.stringify(loc)})" type="button">
+    // Performance button — untuk Cabang dan non-Cabang
+    let perfBtn = '';
+    const safeStoreCode = (loc.store_code || '').replace(/'/g, "\\'");
+    if (normalizeNetworkType(loc.network_type) === 'Cabang') {
+      perfBtn = `<button class="popup-perf-btn" onclick="openPerfPanelByStoreCode('${safeStoreCode}', 'perf')" type="button">
         <svg width='12' height='12' fill='none' stroke='currentColor' viewBox='0 0 24 24' stroke-width='2.2'><path stroke-linecap='round' stroke-linejoin='round' d='M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z'/></svg>
-        Performance Report
-       </button>`
-      : '';
+        📊 Performance Report
+       </button>`;
+    } else {
+      perfBtn = `<button class="popup-perf-btn" style="opacity:0.85;" onclick="openPerfPanelByStoreCode('${safeStoreCode}', 'info')" type="button">
+        <svg width='12' height='12' fill='none' stroke='currentColor' viewBox='0 0 24 24' stroke-width='2.2'><path stroke-linecap='round' stroke-linejoin='round' d='M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z'/></svg>
+        📋 Detail Lokasi
+       </button>`;
+    }
 
     return `<div style="font-family:Inter,system-ui,sans-serif;width:276px;">
     <div style="padding:11px 14px 9px;border-bottom:1px solid #f1f5f9;">
@@ -1674,8 +1831,8 @@
     </div>
     <div style="padding:9px 14px;display:flex;flex-direction:column;gap:6px;">
       <div style="display:flex;gap:5px;flex-wrap:wrap;">
+        <span style="display:inline-flex;align-items:center;padding:2px 7px;border-radius:9999px;font-size:10.5px;font-weight:600;background:${nBg};color:${nc};border:1px solid ${nc}40;">${nLabel}</span>
         <span style="display:inline-flex;align-items:center;padding:2px 7px;border-radius:9999px;font-size:10.5px;font-weight:600;background:${sc}18;color:${sc};border:1px solid ${sc}30;">${loc.status}</span>
-        <span style="display:inline-flex;align-items:center;padding:2px 7px;border-radius:9999px;font-size:10.5px;font-weight:600;background:${nc}18;color:${nc};border:1px solid ${nc}30;">${loc.network_type}</span>
       </div>
       ${loc.area ? `<div style="font-size:11px;color:#64748b;"><b style="color:#94a3b8;">Area:</b> ${loc.area}</div>` : ''}
       ${loc.network_name ? `<div style="font-size:11px;color:#64748b;"><b style="color:#94a3b8;">Network:</b> ${loc.network_name}</div>` : ''}
@@ -1730,11 +1887,11 @@
   function renderMarkers(locs) {
     clusterGroup.clearLayers();
     locs.forEach(loc => {
-      const icon = makeIcon(loc, currentMode);
+      const icon = makeIcon(loc);
       const marker = L.marker([loc.latitude, loc.longitude], { icon });
       marker.bindPopup(buildPopup(loc), { maxWidth: 300, className: 'custom-popup' });
-      marker.bindTooltip(`<b>${loc.business_name || loc.store_code}</b> — ${loc.status}`,
-        { direction: 'top', offset: [0, -28] });
+      marker.bindTooltip(`<b>${loc.business_name || loc.store_code}</b> — ${loc.network_type || 'Lokasi'} (${loc.status})`,
+        { direction: 'top', offset: [0, -30] });
       clusterGroup.addLayer(marker);
     });
     if (locs.length > 0 && clusterGroup.getBounds().isValid()) {
@@ -1755,7 +1912,7 @@
         const ids = { 'Cabang': 'cb-cabang', 'Pos': 'cb-pos', 'Kios': 'cb-kios', 'Subkios': 'cb-subkios', 'Lainnya': 'cb-lainnya' };
         const el = document.getElementById(ids[n]); return el ? el.checked : true;
       });
-      filtered = allLocs.filter(l => active.includes(l.network_type));
+      filtered = allLocs.filter(l => active.includes(normalizeNetworkType(l.network_type)));
     }
     renderMarkers(filtered);
     document.getElementById('stat-displayed').textContent = filtered.length;
@@ -1798,6 +1955,7 @@
   function initPerfYearSelect() {
     const sel = document.getElementById('perf-sel-year');
     if (!sel) return;
+    sel.innerHTML = '';
     const now = new Date();
     const curYear = now.getFullYear();
     for (let y = curYear + 1; y >= curYear - 4; y--) {
@@ -1807,13 +1965,21 @@
       if (y === curYear) opt.selected = true;
       sel.appendChild(opt);
     }
-    // Set default month to current
+    // Set default month to current month
     const mSel = document.getElementById('perf-sel-month');
     if (mSel) mSel.value = now.getMonth() + 1;
   }
 
-  /* ── Open performance panel for a Cabang location ── */
-  function openPerfPanel(loc) {
+  /* ── Open performance panel by store code lookup ── */
+  function openPerfPanelByStoreCode(sc, initialTab = 'info') {
+    const loc = allLocs.find(l => String(l.store_code) === String(sc));
+    if (loc) {
+      openPerfPanel(loc, initialTab);
+    }
+  }
+
+  /* ── Open performance panel for a location ── */
+  function openPerfPanel(loc, initialTab = 'info') {
     perfCurrentLoc = loc;
     const panel = document.getElementById('perf-panel');
     if (!panel) return;
@@ -1821,14 +1987,14 @@
     // Set header info
     const nameEl = document.getElementById('perf-branch-name');
     const metaEl = document.getElementById('perf-branch-meta');
-    if (nameEl) nameEl.textContent = loc.business_name || 'Cabang';
-    if (metaEl) metaEl.textContent = `${loc.store_code || '—'}${loc.area ? ' · ' + loc.area : ''}`;
+    if (nameEl) nameEl.textContent = loc.business_name || 'Detail Lokasi';
+    if (metaEl) metaEl.textContent = `${loc.store_code || '—'}${loc.area ? ' · ' + loc.area : ''} · ${loc.network_type || '—'}`;
 
     // Fill informasi tab
     fillInfoTab(loc);
 
-    // Default to info tab
-    switchPerfTab('info');
+    // Switch to initial tab
+    switchPerfTab(initialTab);
 
     // Open panel
     panel.classList.add('open');
@@ -1857,7 +2023,7 @@
       perfBody.style.display = 'block'; infoBody.style.display = 'none';
 
       // Only load performance if Cabang
-      if (perfCurrentLoc && perfCurrentLoc.network_type === 'Cabang') {
+      if (perfCurrentLoc && normalizeNetworkType(perfCurrentLoc.network_type) === 'Cabang') {
         loadPerfData();
       } else {
         showPerfState('not-cabang');
@@ -1868,20 +2034,24 @@
   /* ── Fill Informasi tab with location details ── */
   function fillInfoTab(loc) {
     const sc = getStatusColor(loc.status);
-    const nc = getNetColor(loc.network_type);
+    const netCfg = getNetConfig(loc.network_type);
+    const nc = netCfg.color;
+    const nBg = netCfg.bgLight;
+    const nLabel = netCfg.label;
     const el = document.getElementById('perf-info-detail');
     if (!el) return;
+    const safeStoreCode = (loc.store_code || '').replace(/'/g, "\\'");
     el.innerHTML = `
     <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:2px;">
+      <span style="display:inline-flex;align-items:center;padding:3px 8px;border-radius:9999px;font-size:11px;font-weight:600;background:${nBg};color:${nc};border:1px solid ${nc}40;">${nLabel}</span>
       <span style="display:inline-flex;align-items:center;padding:3px 8px;border-radius:9999px;font-size:11px;font-weight:600;background:${sc}18;color:${sc};border:1px solid ${sc}30;">${loc.status}</span>
-      <span style="display:inline-flex;align-items:center;padding:3px 8px;border-radius:9999px;font-size:11px;font-weight:600;background:${nc}18;color:${nc};border:1px solid ${nc}30;">${loc.network_type}</span>
     </div>
     ${loc.area ? `<div style="font-size:11.5px;color:#475569;"><span style="color:#94a3b8;font-weight:600;">Area:</span> ${loc.area}</div>` : ''}
     ${loc.network_name ? `<div style="font-size:11.5px;color:#475569;"><span style="color:#94a3b8;font-weight:600;">Network:</span> ${loc.network_name}</div>` : ''}
     ${loc.address ? `<div style="font-size:11.5px;color:#475569;display:flex;gap:5px;align-items:flex-start;"><svg width='11' height='11' fill='none' stroke='#94a3b8' viewBox='0 0 24 24' stroke-width='2' style='flex-shrink:0;margin-top:2px;'><path d='M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z'/><path d='M15 11a3 3 0 11-6 0 3 3 0 016 0z'/></svg><span>${loc.address}</span></div>` : ''}
     <div style="font-size:10.5px;color:#94a3b8;font-family:monospace;">${loc.latitude.toFixed(6)}, ${loc.longitude.toFixed(6)}</div>
     ${loc.maps_uri ? `<a href="${loc.maps_uri}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;color:#7c3aed;font-size:11.5px;font-weight:600;text-decoration:none;margin-top:2px;"><svg width='11' height='11' fill='none' stroke='currentColor' viewBox='0 0 24 24' stroke-width='2'><path d='M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14'/></svg>Lihat di Google Maps</a>` : ''}
-    ${loc.network_type === 'Cabang' ? `<button onclick="switchPerfTab('perf')" style="margin-top:6px;width:100%;padding:7px 11px;border-radius:8px;border:1.5px solid rgba(124,58,237,0.3);background:rgba(237,233,254,0.5);color:#5b21b6;font-size:11.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;justify-content:center;transition:all 0.15s;" onmouseenter="this.style.background='rgba(237,233,254,0.9)'" onmouseleave="this.style.background='rgba(237,233,254,0.5)'"><svg width='12' height='12' fill='none' stroke='currentColor' viewBox='0 0 24 24' stroke-width='2.2'><path stroke-linecap='round' stroke-linejoin='round' d='M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z'/></svg>Lihat Performance Report</button>` : ''}
+    ${normalizeNetworkType(loc.network_type) === 'Cabang' ? `<button onclick="switchPerfTab('perf')" style="margin-top:8px;width:100%;padding:7px 11px;border-radius:8px;border:1.5px solid rgba(124,58,237,0.3);background:rgba(237,233,254,0.5);color:#5b21b6;font-size:11.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;justify-content:center;transition:all 0.15s;" onmouseenter="this.style.background='rgba(237,233,254,0.9)'" onmouseleave="this.style.background='rgba(237,233,254,0.5)'"><svg width='12' height='12' fill='none' stroke='currentColor' viewBox='0 0 24 24' stroke-width='2.2'><path stroke-linecap='round' stroke-linejoin='round' d='M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z'/></svg>Lihat Performance Report</button>` : ''}
   `;
   }
 
@@ -1930,12 +2100,18 @@
 
   /* ── Show/hide panel states ── */
   function showPerfState(state) {
-    const states = ['loading', 'empty', 'error', 'not-cabang', 'cards'];
-    states.forEach(s => {
-      const id = s === 'cards' ? 'perf-cards' : `perf-${s.replace('-', '')}`;
-      const el = document.getElementById(s === 'cards' ? 'perf-cards' : `perf-${s.replace('-', '-')}`)
-        || document.getElementById(s === 'not-cabang' ? 'perf-not-cabang' : `perf-${s}`);
-      if (el) el.style.display = (s === state) ? (s === 'cards' ? 'grid' : 'flex') : 'none';
+    const stateIds = {
+      'loading': 'perf-loading',
+      'empty': 'perf-empty',
+      'error': 'perf-error',
+      'not-cabang': 'perf-not-cabang',
+      'cards': 'perf-cards'
+    };
+    Object.keys(stateIds).forEach(s => {
+      const el = document.getElementById(stateIds[s]);
+      if (el) {
+        el.style.display = (s === state) ? (s === 'cards' ? 'grid' : 'flex') : 'none';
+      }
     });
   }
 
@@ -1967,7 +2143,7 @@
 
   function formatPct(val) {
     if (val === null || val === undefined || isNaN(val)) return '—';
-    return `${val.toFixed(2)}%`;
+    return `${Number(val).toFixed(2)}%`;
   }
 
   function safePercChange(curr, prev) {
@@ -1986,39 +2162,17 @@
    * Returns 'positive', 'negative', or 'neutral'
    * based on the metric and the direction of change.
    *
-   * Metrics where HIGHER is BETTER: nsa, osa, profit
+   * Metrics where HIGHER is BETTER: nsa, osa, cd, profit
    * Metrics where LOWER is BETTER:  nl (lower losses = better)
-   * Metrics with context-dependent meaning: cd
    */
   function getTrendClass(diff, metric) {
     if (diff === null || diff === undefined || isNaN(diff) || diff === 0) return 'neutral';
-    const higher_is_better = ['nsa', 'osa', 'profit'];
-    const lower_is_better = ['nl'];
-    // cd: lower delinquency (lower CD%) can mean worse or better depending on business rules.
-    // We default to: higher CD% = more of portfolio is cycling normally = neutral display.
-    // If you want directional: treat higher as better (lower delinquency backlog).
-    const cd_higher_is_better = true;
-
-    if (metric === 'cd') {
-      return cd_higher_is_better ? (diff > 0 ? 'positive' : 'negative') : 'neutral';
+    if (metric === 'nl') {
+      // Lower loss = improvement (positive/green), higher loss = deterioration (negative/red)
+      return diff < 0 ? 'positive' : 'negative';
     }
-    if (higher_is_better.includes(metric)) {
-      return diff > 0 ? 'positive' : 'negative';
-    }
-    if (lower_is_better.includes(metric)) {
-      // For losses: increase in NL = bad = negative trend
-      return diff > 0 ? 'negative' : 'positive';
-    }
-    return 'neutral';
-  }
-
-  function trendArrow(diff, metric) {
-    if (diff === null || diff === undefined || isNaN(diff)) return '—';
-    if (diff === 0) return '→ 0%';
-    const cls = getTrendClass(diff, metric);
-    const pct = safePercChange !== null ? '' : '';
-    const arrow = diff > 0 ? '↑' : '↓';
-    return `${arrow}`;
+    // For nsa, osa, cd, profit: higher is better
+    return diff > 0 ? 'positive' : 'negative';
   }
 
   /* ────────────────────────────────────
@@ -2034,7 +2188,7 @@
       const curLabel = `${MONTH_NAMES[month - 1]} ${year}`;
       const prevLabel = `${MONTH_NAMES[month - 1]} ${year - 1}`;
       label.innerHTML = `<span style="font-weight:700;color:#5b21b6;">${curLabel}</span>
-      <span style="color:#94a3b8;"> vs </span>
+      <span style="color:#94a3b8;">&nbsp;vs&nbsp;</span>
       <span style="font-weight:600;color:#94a3b8;">${prevLabel}</span>`;
     }
 
@@ -2059,32 +2213,46 @@
       const hasPrev = prevVal !== null && prevVal !== undefined && !isNaN(prevVal);
 
       currEl.textContent = hasCurr ? formatFn(currVal) : '—';
+      if (hasCurr && (metric === 'nsa' || metric === 'profit' || metric === 'nl')) {
+        currEl.title = formatRupiahFull(currVal);
+      }
+      
       prevEl.textContent = hasPrev ? `vs ${formatFn(prevVal)}` : 'vs —';
+      if (hasPrev && (metric === 'nsa' || metric === 'profit' || metric === 'nl')) {
+        prevEl.title = formatRupiahFull(prevVal);
+      }
 
       if (hasCurr && hasPrev) {
         const diff = currVal - prevVal;
         const pct = safePercChange(currVal, prevVal);
         const cls = getTrendClass(diff, metric);
         const arrow = diff > 0 ? '↑' : diff < 0 ? '↓' : '→';
-        const diffStr = formatFn(Math.abs(diff));
         const pctStr = pct !== null ? ` (${pct > 0 ? '+' : ''}${pct.toFixed(1)}%)` : '';
         diffEl.className = `perf-metric-diff trend-${cls}`;
-        diffEl.textContent = `${arrow} ${diff >= 0 ? '+' : '-'}${diffStr.replace(/^[-+]?Rp\s?/, 'Rp ')}${pctStr}`;
-        // Fix the diffStr for non-rupiah metrics
+
         if (metric === 'osa') {
-          diffEl.textContent = `${arrow} ${diff > 0 ? '+' : ''}${Math.round(diff).toLocaleString('id-ID')} unit${pctStr}`;
+          diffEl.textContent = `${arrow} ${diff > 0 ? '+' : ''}${Math.round(diff).toLocaleString('id-ID')} Unit${pctStr}`;
         } else if (metric === 'cd') {
           diffEl.textContent = `${arrow} ${diff > 0 ? '+' : ''}${diff.toFixed(2)}%${pctStr}`;
+        } else if (metric === 'nl') {
+          const nlDiffAbs = formatRupiah(Math.abs(diff));
+          const nlLabel = diff < 0 ? ' (Improvement)' : diff > 0 ? ' (Deterioration)' : '';
+          diffEl.textContent = `${arrow} ${diff > 0 ? '+' : '-'}${nlDiffAbs.replace(/^[-+]?Rp\s?/, 'Rp ')}${pctStr}${nlLabel}`;
+          diffEl.title = `Selisih: ${formatRupiahFull(diff)}`;
         } else {
-          // Rupiah diff
-          diffEl.textContent = `${arrow} ${diff > 0 ? '+' : ''}${formatRupiah(diff)}${pctStr}`;
+          // Rupiah diff (nsa, profit)
+          const diffAbs = formatRupiah(Math.abs(diff));
+          diffEl.textContent = `${arrow} ${diff >= 0 ? '+' : '-'}${diffAbs.replace(/^[-+]?Rp\s?/, 'Rp ')}${pctStr}`;
+          diffEl.title = `Selisih: ${formatRupiahFull(diff)}`;
         }
       } else if (hasCurr && !hasPrev) {
         diffEl.className = 'perf-metric-diff trend-neutral';
         diffEl.textContent = 'Tidak ada data tahun lalu';
+        diffEl.title = '';
       } else {
         diffEl.className = 'perf-metric-diff trend-neutral';
         diffEl.textContent = '—';
+        diffEl.title = '';
       }
     }
 

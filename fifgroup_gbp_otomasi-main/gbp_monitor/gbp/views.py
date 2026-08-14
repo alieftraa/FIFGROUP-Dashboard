@@ -336,19 +336,43 @@ class MapDataAPIView(View):
                 "area": m["area"] or "",
             }
 
-        def normalize_network_type(raw):
+        def normalize_network_type(raw, business_name="", store_code=""):
             """Normalisasi tipe network ke: Cabang, Pos, Kios, Subkios, Lainnya."""
-            if not raw:
-                return "Lainnya"
-            v = str(raw).strip().lower()
-            if v in ("cabang", "branch"):
+            if raw:
+                v = str(raw).strip().lower()
+                if v in ("cabang", "branch") or "cabang" in v:
+                    return "Cabang"
+                if v == "pos" or "pos" in v:
+                    return "Pos"
+                if "subkios" in v or "sub kios" in v or "sub_kios" in v:
+                    return "Subkios"
+                if "kios" in v:
+                    return "Kios"
+
+            # Infer dari nama bisnis
+            bn = (business_name or "").lower()
+            if "cabang" in bn or "branch" in bn:
                 return "Cabang"
-            if v == "pos":
-                return "Pos"
-            if "subkios" in v or "sub kios" in v or "sub_kios" in v:
+            if "subkios" in bn or "sub kios" in bn:
                 return "Subkios"
-            if "kios" in v:
+            if "kios" in bn:
                 return "Kios"
+            if " pos " in f" {bn} " or bn.startswith("pos ") or bn.endswith(" pos"):
+                return "Pos"
+
+            # Infer dari konvensi store_code 5 digit FIFGROUP (2 digit terakhir)
+            sc_str = str(store_code).strip().split(".")[0]
+            if len(sc_str) == 5 and sc_str.isdigit():
+                suffix = int(sc_str[3:5])
+                if suffix in (0, 1, 2, 3, 4):
+                    return "Cabang"
+                elif 50 <= suffix <= 69:
+                    return "Pos"
+                elif 70 <= suffix <= 79:
+                    return "Kios"
+                elif 80 <= suffix <= 89:
+                    return "Subkios"
+
             return "Lainnya"
 
         def normalize_status(raw):
@@ -388,7 +412,8 @@ class MapDataAPIView(View):
             master_info = master_map.get(sc, {})
 
             raw_network = master_info.get("raw_network", "")
-            network_type = normalize_network_type(raw_network)
+            b_name = s.get("business_name") or ""
+            network_type = normalize_network_type(raw_network, business_name=b_name, store_code=sc)
 
             status_normalized = normalize_status(s.get("status", ""))
 
@@ -898,6 +923,19 @@ class BranchPerformanceAPIView(View):
         elif prev_rec:
             branch_name = prev_rec.branch_name
             area        = prev_rec.area or ""
+
+        # Fallback jika belum ada sales record untuk branch ini
+        if not branch_name:
+            master = MasterLocation.objects.filter(store_code=store_code).first()
+            if not master:
+                master = MasterLocation.objects.filter(store_code__startswith=branch_prefix).first()
+            if master:
+                branch_name = master.business_name or master.network_name or ""
+                area = master.area or ""
+            else:
+                snap = LocationSnapshot.objects.filter(store_code=store_code).first()
+                if snap:
+                    branch_name = snap.business_name or ""
 
         return JsonResponse({
             "ok":            True,

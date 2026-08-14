@@ -10,12 +10,21 @@
 {% block content %}
 
 <!-- ── Page Header ─────────────────────────────────────── -->
-<div class="mb-6">
-  <h1 class="text-2xl font-display font-bold text-[#0F172A] tracking-tight">Update Status Verifikasi GBP</h1>
-  <p class="mt-1 text-sm text-[#8C8AA0]">
-    Bandingkan status verifikasi master dengan data terbaru dari Google Business Profile API,
-    lalu update hanya baris yang berubah.
-  </p>
+<div class="dash-card mb-6">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h1 class="text-xl font-display font-bold text-primary leading-tight">Update Status Verifikasi GBP</h1>
+      <p class="text-sm text-[#8C8AA0] mt-1">Bandingkan status verifikasi master dengan data terbaru dari Google Business Profile API, lalu update hanya baris yang berubah.</p>
+    </div>
+    <div class="flex flex-col sm:items-end gap-1 flex-shrink-0">
+      <span class="text-[10px] font-semibold text-[#8C8AA0] uppercase tracking-wider">Sistem Rekonsiliasi</span>
+      <span class="text-sm font-display font-bold text-primary">Multi-Identifier Match</span>
+      <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-700">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+        Siap Rekonsiliasi
+      </span>
+    </div>
+  </div>
 </div>
 
 <!-- ── Info Banner ─────────────────────────────────────── -->

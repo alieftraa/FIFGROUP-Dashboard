@@ -165,12 +165,24 @@
 {% else %}
 
 <!-- ── Page Header ─────────────────────────────────────── -->
-<div class="mb-5 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-  <div>
-    <h1 class="text-2xl font-display font-bold text-[#0F172A] tracking-tight">Store Data</h1>
-    <p class="text-sm text-[#8C8AA0] mt-0.5">
-      Menampilkan <strong class="text-[#0F3C8C]">{{ total_count }}</strong> lokasi{% if sel_run %} dari Run #{{ sel_run.run_id }}{% endif %}
-    </p>
+<div class="dash-card mb-6">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h1 class="text-xl font-display font-bold text-primary leading-tight">Store Data Management</h1>
+      <p class="text-sm text-[#8C8AA0] mt-1">Daftar profil Google Business Profile dan status verifikasi seluruh jaringan outlet FIFGROUP.</p>
+    </div>
+    <div class="flex flex-col sm:items-end gap-1 flex-shrink-0">
+      <span class="text-[10px] font-semibold text-[#8C8AA0] uppercase tracking-wider">Data per Run</span>
+      {% if sel_run %}
+      <span class="text-sm font-display font-bold text-primary">{{ sel_run.run_date }}</span>
+      {% else %}
+      <span class="text-sm font-display font-bold text-primary">Terbaru</span>
+      {% endif %}
+      <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-700">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+        {{ total_count }} Lokasi Terdaftar
+      </span>
+    </div>
   </div>
 </div>
 
