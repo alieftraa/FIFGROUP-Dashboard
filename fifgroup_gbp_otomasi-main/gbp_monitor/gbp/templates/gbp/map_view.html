@@ -86,8 +86,8 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
-    background: rgba(237, 233, 254, 0.4);
-    border: 1px solid rgba(167, 139, 250, 0.2);
+    background: rgba(239, 246, 255, 0.7);
+    border: 1px solid rgba(59, 130, 246, 0.25);
     border-radius: 9px;
     padding: 3px;
   }
@@ -100,7 +100,7 @@
     border-radius: 6px;
     font-size: 11.5px;
     font-weight: 500;
-    color: #94a3b8;
+    color: #64748b;
     cursor: pointer;
     transition: all 0.15s;
     border: none;
@@ -111,15 +111,15 @@
   }
 
   .mode-btn:hover {
-    color: #5b21b6;
-    background: rgba(237, 233, 254, 0.5);
+    color: #0F3C8C;
+    background: rgba(219, 234, 254, 0.6);
   }
 
   .mode-btn.active {
     background: white;
-    color: #5b21b6;
-    font-weight: 600;
-    box-shadow: 0 2px 7px rgba(139, 92, 246, 0.18);
+    color: #0F3C8C;
+    font-weight: 700;
+    box-shadow: 0 2px 7px rgba(15, 60, 140, 0.15);
   }
 
   /* ── FILTER CHIPS ── */
@@ -129,7 +129,7 @@
     gap: 7px;
     padding: 4.5px 9px;
     border-radius: 7px;
-    border: 1.5px solid rgba(203, 213, 225, 0.6);
+    border: 1.5px solid rgba(203, 213, 225, 0.7);
     background: rgba(255, 255, 255, 0.7);
     font-size: 11.5px;
     font-weight: 500;
@@ -140,8 +140,8 @@
   }
 
   .filter-chip:has(input:checked) {
-    border-color: #7c3aed;
-    background: rgba(237, 233, 254, 0.6);
+    border-color: #2563eb;
+    background: rgba(239, 246, 255, 0.85);
   }
 
   .filter-chip input {
@@ -160,7 +160,7 @@
 
   .apply-btn {
     width: 100%;
-    background: linear-gradient(135deg, #7c3aed, #5b21b6);
+    background: linear-gradient(135deg, #0F3C8C, #1E40AF);
     color: white;
     border: none;
     padding: 6px 12px;
@@ -170,12 +170,12 @@
     cursor: pointer;
     transition: all 0.15s;
     margin-top: 7px;
-    box-shadow: 0 3px 9px rgba(124, 58, 237, 0.22);
+    box-shadow: 0 3px 9px rgba(15, 60, 140, 0.25);
   }
 
   .apply-btn:hover {
     transform: translateY(-1px);
-    box-shadow: 0 5px 13px rgba(124, 58, 237, 0.32);
+    box-shadow: 0 5px 14px rgba(15, 60, 140, 0.35);
   }
 
   .apply-btn:active {
@@ -329,15 +329,15 @@
     z-index: 999;
     gap: 10px;
     font-size: 13px;
-    color: #5b21b6;
+    color: #0F3C8C;
     font-weight: 600;
   }
 
   .spin {
     width: 30px;
     height: 30px;
-    border: 3px solid rgba(124, 58, 237, 0.2);
-    border-top-color: #7c3aed;
+    border: 3px solid rgba(15, 60, 140, 0.2);
+    border-top-color: #0F3C8C;
     border-radius: 50%;
     animation: spin 0.7s linear infinite;
   }
@@ -412,7 +412,7 @@
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
     border: 1px solid rgba(255, 255, 255, 0.85);
-    box-shadow: 0 4px 24px rgba(139, 92, 246, 0.07), 0 1.5px 6px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 24px rgba(15, 60, 140, 0.07), 0 1.5px 6px rgba(0, 0, 0, 0.05);
   }
 
   .cov-card {
@@ -441,14 +441,14 @@
   }
 
   .cov-filter-tab:hover {
-    border-color: #7c3aed;
-    color: #5b21b6;
+    border-color: #2563eb;
+    color: #0F3C8C;
   }
 
   .cov-filter-tab.active {
-    background: linear-gradient(135deg, #7c3aed, #5b21b6);
+    background: linear-gradient(135deg, #0F3C8C, #1E40AF);
     color: white;
-    border-color: #7c3aed;
+    border-color: #0F3C8C;
   }
 
   .cov-table th {
@@ -725,26 +725,77 @@
     font-size: 13px;
     font-weight: 700;
     color: #334155;
+    margin-bottom: 5px;
   }
 
-  .perf-state-sub {
+  .perf-bar-label {
+    width: 65px;
+    font-weight: 600;
+    color: #475569;
+    flex-shrink: 0;
+    font-size: 10.5px;
+  }
+
+  .perf-bar-track {
+    flex: 1;
+    height: 7px;
+    background: #f1f5f9;
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .perf-bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #0F3C8C, #38bdf8);
+    transition: width 0.4s ease;
+  }
+
+  .perf-bar-val {
+    width: 52px;
+    text-align: right;
+    font-weight: 700;
+    font-size: 10.5px;
+    color: #1e293b;
+    flex-shrink: 0;
+  }
+
+  /* Detail row in info tab */
+  .perf-info-row {
+    display: flex;
+    gap: 8px;
+    padding: 7px 0;
+    border-bottom: 1px solid #f8fafc;
     font-size: 11.5px;
-    color: #94a3b8;
-    line-height: 1.5;
   }
 
-  /* Popup performance btn */
+  .perf-info-key {
+    width: 100px;
+    color: #64748b;
+    flex-shrink: 0;
+    font-weight: 600;
+  }
+
+  .perf-info-val {
+    color: #1e293b;
+    font-weight: 500;
+    flex: 1;
+    word-break: break-word;
+  }
+
+  /* Popup button to open panel */
   .popup-perf-btn {
-    display: inline-flex;
+    display: flex;
     align-items: center;
+    justify-content: center;
     gap: 5px;
     margin-top: 8px;
     width: 100%;
     padding: 6px 11px;
     border-radius: 8px;
-    border: 1.5px solid rgba(124, 58, 237, 0.3);
-    background: rgba(237, 233, 254, 0.5);
-    color: #5b21b6;
+    border: 1.5px solid rgba(37, 99, 235, 0.25);
+    background: rgba(239, 246, 255, 0.7);
+    color: #0F3C8C;
     font-size: 11.5px;
     font-weight: 700;
     cursor: pointer;
@@ -753,8 +804,8 @@
   }
 
   .popup-perf-btn:hover {
-    background: rgba(237, 233, 254, 0.9);
-    border-color: #7c3aed;
+    background: rgba(219, 234, 254, 0.95);
+    border-color: #2563eb;
   }
 </style>
 {% endblock %}
@@ -766,7 +817,7 @@
   style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;text-align:center;">
   <div
     style="width:72px;height:72px;border-radius:20px;background:rgba(255,255,255,0.8);border:1px solid rgba(226,232,240,0.8);display:flex;align-items:center;justify-content:center;margin-bottom:20px;">
-    <svg style="width:36px;height:36px;color:#c4b5fd;" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+    <svg style="width:36px;height:36px;color:#93c5fd;" fill="none" stroke="currentColor" viewBox="0 0 24 24"
       stroke-width="1.5">
       <path stroke-linecap="round" stroke-linejoin="round"
         d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
@@ -785,7 +836,7 @@
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-2">
         <span
-          style="width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,#7c3aed,#5b21b6);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          style="width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,#0F3C8C,#1E40AF);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <svg style="width:13px;height:13px;color:white;" fill="none" stroke="currentColor" viewBox="0 0 24 24"
             stroke-width="2.2">
             <path stroke-linecap="round" stroke-linejoin="round"
@@ -1264,14 +1315,14 @@
           </div>
         </div>
         <div class="stat-row">
-          <div class="stat-icon" style="background:linear-gradient(135deg,#ede9fe,#ddd6fe);">
-            <svg style="width:13px;height:13px;color:#7c3aed;" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+          <div class="stat-icon" style="background:linear-gradient(135deg,#eff6ff,#dbeafe);">
+            <svg style="width:13px;height:13px;color:#0F3C8C;" fill="none" stroke="currentColor" viewBox="0 0 24 24"
               stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M3 7h18M3 12h18M3 17h18" />
             </svg>
           </div>
           <div>
-            <div class="stat-num" style="color:#7c3aed;" id="stat-filtered">{{ total_count }}</div>
+            <div class="stat-num" style="color:#0F3C8C;" id="stat-filtered">{{ total_count }}</div>
             <div class="stat-lbl">Total Filtered</div>
           </div>
         </div>
@@ -1287,10 +1338,14 @@
             style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;margin-top:2px;">
             Status Verifikasi</div>
           <div style="display:flex;flex-direction:column;gap:2px;">
-            <div class="legend-item"><span class="legend-dot" style="background:#22c55e;"></span>Verified</div>
-            <div class="legend-item"><span class="legend-dot" style="background:#f59e0b;"></span>Need Verification</div>
-            <div class="legend-item"><span class="legend-dot" style="background:#f97316;"></span>Duplicate</div>
-            <div class="legend-item"><span class="legend-dot" style="background:#ef4444;"></span>Suspended</div>
+            <div class="legend-row"><span class="legend-dot" style="background:#16a34a;"></span><span
+                style="color:#15803d;font-weight:600;">Verified</span></div>
+            <div class="legend-row"><span class="legend-dot" style="background:#eab308;"></span><span
+                style="color:#a16207;font-weight:600;">Need Verification</span></div>
+            <div class="legend-row"><span class="legend-dot" style="background:#ea580c;"></span><span
+                style="color:#c2410c;font-weight:600;">Duplicate</span></div>
+            <div class="legend-row"><span class="legend-dot" style="background:#dc2626;"></span><span
+                style="color:#b91c1c;font-weight:600;">Suspended</span></div>
           </div>
         </div>
 
@@ -1395,7 +1450,7 @@
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
             <div style="display:flex;align-items:center;gap:8px;">
               <div
-                style="width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,#7c3aed,#5b21b6);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                style="width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,#0F3C8C,#1E40AF);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                 <svg style="width:13px;height:13px;color:white;" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                   stroke-width="2.2">
                   <path stroke-linecap="round" stroke-linejoin="round"
@@ -1858,7 +1913,7 @@
     const nBg = netCfg.bgLight;
     const nLabel = netCfg.label;
     const mapsLink = loc.maps_uri
-      ? `<a href="${loc.maps_uri}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;color:#7c3aed;font-size:11px;font-weight:600;text-decoration:none;margin-top:6px;"><svg width='11' height='11' fill='none' stroke='currentColor' viewBox='0 0 24 24' stroke-width='2'><path d='M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14'/></svg>Google Maps</a>`
+      ? `<a href="${loc.maps_uri}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;color:#0F3C8C;font-size:11px;font-weight:600;text-decoration:none;margin-top:6px;"><svg width='11' height='11' fill='none' stroke='currentColor' viewBox='0 0 24 24' stroke-width='2'><path d='M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14'/></svg>Google Maps</a>`
       : '';
 
     // Performance button — untuk Cabang dan non-Cabang
@@ -1907,9 +1962,9 @@
   const BOUNDARIES_API_URL = '{% url "gbp:branch_boundaries_api" %}';
 
   const BRANCH_PALETTE = [
-    '#2563EB', '#7C3AED', '#059669', '#D97706', '#DC2626',
+    '#2563EB', '#0284C7', '#059669', '#D97706', '#DC2626',
     '#0891B2', '#DB2777', '#4F46E5', '#0D9488', '#EA580C',
-    '#16A34A', '#9333EA', '#0284C7', '#CA8A04', '#475569'
+    '#16A34A', '#0EA5E9', '#0284C7', '#CA8A04', '#475569'
   ];
 
   let branchTerritories = {};      // prefix -> territory metadata
@@ -2254,7 +2309,7 @@
       iconCreateFunction(cluster) {
         const n = cluster.getChildCount();
         return L.divIcon({
-          html: `<div style="width:34px;height:34px;border-radius:50%;background:rgba(124,58,237,0.82);color:white;font-weight:700;font-size:11px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(124,58,237,0.35);border:2px solid rgba(255,255,255,0.75);">${n}</div>`,
+          html: `<div style="width:34px;height:34px;border-radius:50%;background:rgba(15,60,140,0.88);color:white;font-weight:700;font-size:11px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(15,60,140,0.3);border:2px solid rgba(255,255,255,0.85);">${n}</div>`,
           iconSize: [34, 34], className: ''
         });
       }
@@ -2496,8 +2551,8 @@
     ${loc.network_name ? `<div style="font-size:11.5px;color:#475569;"><span style="color:#94a3b8;font-weight:600;">Network:</span> ${loc.network_name}</div>` : ''}
     ${loc.address ? `<div style="font-size:11.5px;color:#475569;display:flex;gap:5px;align-items:flex-start;"><svg width='11' height='11' fill='none' stroke='#94a3b8' viewBox='0 0 24 24' stroke-width='2' style='flex-shrink:0;margin-top:2px;'><path d='M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z'/><path d='M15 11a3 3 0 11-6 0 3 3 0 016 0z'/></svg><span>${loc.address}</span></div>` : ''}
     <div style="font-size:10.5px;color:#94a3b8;font-family:monospace;">${loc.latitude.toFixed(6)}, ${loc.longitude.toFixed(6)}</div>
-    ${loc.maps_uri ? `<a href="${loc.maps_uri}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;color:#7c3aed;font-size:11.5px;font-weight:600;text-decoration:none;margin-top:2px;"><svg width='11' height='11' fill='none' stroke='currentColor' viewBox='0 0 24 24' stroke-width='2'><path d='M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14'/></svg>Lihat di Google Maps</a>` : ''}
-    ${normalizeNetworkType(loc.network_type) === 'Cabang' ? `<button onclick="switchPerfTab('perf')" style="margin-top:8px;width:100%;padding:7px 11px;border-radius:8px;border:1.5px solid rgba(124,58,237,0.3);background:rgba(237,233,254,0.5);color:#5b21b6;font-size:11.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;justify-content:center;transition:all 0.15s;" onmouseenter="this.style.background='rgba(237,233,254,0.9)'" onmouseleave="this.style.background='rgba(237,233,254,0.5)'"><svg width='12' height='12' fill='none' stroke='currentColor' viewBox='0 0 24 24' stroke-width='2.2'><path stroke-linecap='round' stroke-linejoin='round' d='M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z'/></svg>Lihat Performance Report</button>` : ''}
+    ${loc.maps_uri ? `<a href="${loc.maps_uri}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;color:#0F3C8C;font-size:11.5px;font-weight:600;text-decoration:none;margin-top:2px;"><svg width='11' height='11' fill='none' stroke='currentColor' viewBox='0 0 24 24' stroke-width='2'><path d='M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14'/></svg>Lihat di Google Maps</a>` : ''}
+    ${normalizeNetworkType(loc.network_type) === 'Cabang' ? `<button onclick="switchPerfTab('perf')" style="margin-top:8px;width:100%;padding:7px 11px;border-radius:8px;border:1.5px solid rgba(37,99,235,0.25);background:rgba(239,246,255,0.7);color:#0F3C8C;font-size:11.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;justify-content:center;transition:all 0.15s;" onmouseenter="this.style.background='rgba(219,234,254,0.95)'" onmouseleave="this.style.background='rgba(239,246,255,0.7)'"><svg width='12' height='12' fill='none' stroke='currentColor' viewBox='0 0 24 24' stroke-width='2.2'><path stroke-linecap='round' stroke-linejoin='round' d='M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z'/></svg>Lihat Performance Report</button>` : ''}
   `;
   }
 
