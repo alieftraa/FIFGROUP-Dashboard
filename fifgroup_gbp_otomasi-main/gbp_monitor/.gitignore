@@ -1,0 +1,50 @@
+# GBP Monitor — .gitignore
+
+# ── Environment & Secrets ─────────────────────────────────────
+.env
+*.env
+data/token.json
+data/credentials.json
+
+# ── Database ──────────────────────────────────────────────────
+*.db
+*.sqlite3
+db.sqlite3
+
+# ── Logs & Exports ────────────────────────────────────────────
+logs/
+exports/
+
+# ── Python ────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ── Virtual Environment ───────────────────────────────────────
+.venv/
+venv/
+env/
+
+# ── Node / Tailwind ───────────────────────────────────────────
+node_modules/
+gbp/static/gbp/css/output.css
+gbp/static/gbp/css/output.css.map
+
+# ── Django ────────────────────────────────────────────────────
+staticfiles/
+media/
+*.log
+
+# ── IDE ───────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db

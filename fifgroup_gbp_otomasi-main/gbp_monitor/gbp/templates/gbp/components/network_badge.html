@@ -1,0 +1,32 @@
+{% comment %}
+Component: network_badge.html
+Usage: {% include "gbp/components/network_badge.html" with network="Cabang" %}
+
+Supported values:
+  Cabang, Pos, Kios, Subkios, Unknown
+{% endcomment %}
+{% if network == "Cabang" %}
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5M3.75 3v18h16.5V3H3.75zm3.75 3.75h3v3h-3v-3zm6.75 0h3v3h-3v-3zm-6.75 6h3v3h-3v-3zm6.75 0h3v3h-3v-3z"/></svg>
+  Cabang
+</span>
+{% elif network == "Pos" %}
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800">
+  <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="10" r="5"/></svg>
+  Pos
+</span>
+{% elif network == "Kios" %}
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-orange-800">
+  <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><rect x="3" y="3" width="14" height="14" rx="2"/></svg>
+  Kios
+</span>
+{% elif network == "Subkios" %}
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-cyan-100 text-cyan-800">
+  <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><rect x="5" y="5" width="10" height="10" rx="1.5"/></svg>
+  Subkios
+</span>
+{% else %}
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-500">
+  {{ network|default:"Unknown" }}
+</span>
+{% endif %}

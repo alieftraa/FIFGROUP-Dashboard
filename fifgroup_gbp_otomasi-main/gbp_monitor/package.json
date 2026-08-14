@@ -1,0 +1,15 @@
+{
+  "name": "gbp-monitor",
+  "version": "1.0.0",
+  "description": "GBP Monitor — Tailwind CSS build toolchain",
+  "private": true,
+  "scripts": {
+    "dev:css": "tailwindcss -i ./gbp/static/gbp/css/input.css -o ./gbp/static/gbp/css/output.css --watch",
+    "build:css": "tailwindcss -i ./gbp/static/gbp/css/input.css -o ./gbp/static/gbp/css/output.css --minify"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.0",
+    "postcss": "^8.4.0",
+    "autoprefixer": "^10.4.0"
+  }
+}

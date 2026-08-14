@@ -1,0 +1,565 @@
+{% extends "gbp/base.html" %}
+{% block title %}Update Status Verifikasi{% endblock %}
+
+{% block breadcrumb %}
+<span class="text-[#8C8AA0] text-sm">Dashboard</span>
+<span class="text-[#8C8AA0] mx-2 text-sm">/</span>
+<span class="text-[#0F172A] font-medium text-sm">Update Status Verifikasi</span>
+{% endblock %}
+
+{% block content %}
+
+<!-- ── Page Header ─────────────────────────────────────── -->
+<div class="mb-6">
+  <h1 class="text-2xl font-display font-bold text-[#0F172A] tracking-tight">Update Status Verifikasi GBP</h1>
+  <p class="mt-1 text-sm text-[#8C8AA0]">
+    Bandingkan status verifikasi master dengan data terbaru dari Google Business Profile API,
+    lalu update hanya baris yang berubah.
+  </p>
+</div>
+
+<!-- ── Info Banner ─────────────────────────────────────── -->
+<div class="flex items-start gap-3 px-4 py-3.5 rounded-xl bg-[#EFF6FF] border border-blue-100 text-[#0F3C8C] text-sm mb-6">
+  <svg class="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+  </svg>
+  <span>
+    Identifikasi baris dilakukan dengan prioritas: <strong>Network ID → Store Code → Branch ID → Business Name</strong>.
+    Identifier kosong atau ganda akan ditandai untuk cek manual.
+  </span>
+</div>
+
+<!-- ── Form ────────────────────────────────────────────── -->
+<div class="form-card mb-6">
+  <form method="POST" enctype="multipart/form-data" id="update-form">
+    {% csrf_token %}
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+      <!-- Sumber Master -->
+      <div class="md:col-span-2">
+        <label class="block text-sm font-medium text-[#0F172A] mb-2">Sumber Master Data</label>
+        <div class="flex gap-3" id="source-type-group">
+          <label id="label-csv" class="flex items-center gap-2.5 px-4 py-3 rounded-xl border-2 cursor-pointer transition-all flex-1
+                 {% if not form.source_type.value or form.source_type.value == 'csv' %}border-[#0F3C8C] bg-[#EFF6FF]{% else %}border-gray-200 hover:border-blue-200{% endif %}">
+            <input type="radio" name="source_type" value="csv"
+                   {% if not form.source_type.value or form.source_type.value == 'csv' %}checked{% endif %}
+                   onchange="toggleSourceType(this.value)"
+                   class="accent-primary">
+            <div>
+              <div class="text-sm font-semibold text-[#0F172A]">📄 CSV File</div>
+              <div class="text-xs text-[#8C8AA0]">Upload atau path ke file CSV</div>
+            </div>
+          </label>
+          <label id="label-sqlite" class="flex items-center gap-2.5 px-4 py-3 rounded-xl border-2 cursor-pointer transition-all flex-1
+                 {% if form.source_type.value == 'sqlite' %}border-[#0F3C8C] bg-[#EFF6FF]{% else %}border-gray-200 hover:border-blue-200{% endif %}">
+            <input type="radio" name="source_type" value="sqlite"
+                   {% if form.source_type.value == 'sqlite' %}checked{% endif %}
+                   onchange="toggleSourceType(this.value)"
+                   class="accent-primary">
+            <div>
+              <div class="text-sm font-semibold text-[#0F172A]">🗄️ SQLite DB</div>
+              <div class="text-xs text-[#8C8AA0]">Koneksi ke file database SQLite</div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Upload CSV -->
+      <div id="csv-upload-group">
+        <label class="block text-sm font-medium text-[#0F172A] mb-2">Upload File Master CSV</label>
+        <div id="file-drop-area"
+              class="border-2 border-dashed border-[rgba(15,60,140,0.2)] rounded-xl p-6 text-center cursor-pointer
+                     hover:border-[#0F3C8C] hover:bg-[#EFF6FF]/50 transition-all group">
+          <svg class="w-8 h-8 text-[#8C8AA0] group-hover:text-[#0F3C8C] mx-auto mb-2 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
+          </svg>
+          <p class="text-sm text-[#8C8AA0] group-hover:text-[#0F172A]">Drag & drop atau klik untuk pilih file</p>
+          <p class="text-xs text-[#8C8AA0] mt-1" id="file-name-display">Format: .csv</p>
+          <input type="file" name="master_file" accept=".csv" id="master-file-input"
+                 class="hidden" onchange="showFileName(this)">
+        </div>
+      </div>
+
+      <!-- Path Master -->
+      <div>
+        <label class="block text-sm font-medium text-[#0F172A] mb-2" for="master-path-input">
+          Path File Master
+          <span class="text-[#8C8AA0] font-normal">(opsional jika upload)</span>
+        </label>
+        <input type="text" name="master_path" id="master-path-input"
+               value="{{ form.master_path.value|default:'' }}"
+               placeholder="D:\path\to\master.csv atau master.db"
+               class="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl bg-white
+                      focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-[#E20820]
+                      placeholder:text-slate-300 transition-all">
+      </div>
+
+      <!-- SQLite Table (tersembunyi jika CSV) -->
+      <div id="sqlite-table-group" class="hidden">
+        <label class="block text-sm font-medium text-[#0F172A] mb-2" for="sqlite-table-input">
+          Nama Tabel SQLite
+        </label>
+        <input type="text" name="sqlite_table" id="sqlite-table-input"
+               value="{{ form.sqlite_table.value|default:'kios' }}"
+               placeholder="kios"
+               class="w-full px-3.5 py-2.5 text-sm border border-[rgba(15,60,140,0.2)] rounded-xl bg-white
+                      focus:outline-none focus:ring-2 focus:ring-[rgba(15,60,140,0.15)] focus:border-[#0F3C8C] transition-all">
+      </div>
+
+      <!-- Account ID -->
+      <div>
+        <label class="block text-sm font-medium text-[#0F172A] mb-2" for="account-id-input">
+          Account ID GBP
+          <span class="text-[#8C8AA0] font-normal">(kosongkan untuk semua akun)</span>
+        </label>
+        <input type="text" name="account_id" id="account-id-input"
+               value="{{ form.account_id.value|default:'' }}"
+               placeholder="accounts/123456789"
+               class="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl bg-white
+                      focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-[#E20820]
+                      placeholder:text-slate-300 transition-all">
+      </div>
+
+      <!-- Save to disk -->
+      <div class="md:col-span-2">
+        <label class="flex items-center gap-3 cursor-pointer group">
+          <div class="relative">
+            <input type="checkbox" name="save_to_disk" id="save-to-disk-checkbox"
+                   {% if form.save_to_disk.value %}checked{% endif %}
+                   class="sr-only peer">
+            <div class="w-10 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-[rgba(15,60,140,0.2)] rounded-full peer
+                        peer-checked:bg-[#0F3C8C] transition-all"></div>
+            <div class="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-all
+                        peer-checked:translate-x-4 shadow-sm"></div>
+          </div>
+          <div>
+            <div class="text-sm font-medium text-[#0F172A]">Simpan perubahan ke file master di disk</div>
+            <div class="text-xs text-[#8C8AA0]">Memerlukan path file CSV yang valid</div>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    {% if form.errors %}
+    <div class="mt-4 p-3 rounded-xl bg-red-50 border border-red-200">
+      {% for field, errors in form.errors.items %}
+        {% for error in errors %}
+        <p class="text-sm text-red-700 flex items-center gap-2">
+          <span>⚠</span> {{ error }}
+        </p>
+        {% endfor %}
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="mt-6 flex items-center gap-4">
+      <button type="submit" id="btn-submit-update"
+              class="btn-primary px-6 py-2.5 hover:-translate-y-0.5 active:scale-95">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+        Ambil Data Terbaru & Bandingkan
+      </button>
+      <span class="text-xs text-[#8C8AA0]">Proses akan mengambil data langsung dari GBP API</span>
+    </div>
+  </form>
+</div>
+
+<!-- ── Loading Overlay ─────────────────────────────────── -->
+<div id="loading-overlay"
+     class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
+  <div class="bg-white rounded-2xl shadow-xl p-8 flex flex-col items-center max-w-xs w-full mx-4">
+    <div class="w-12 h-12 border-4 border-[#EFF6FF] border-t-[#0F3C8C] rounded-full animate-spin mb-4"></div>
+    <p class="text-sm font-semibold text-[#0F172A] text-center">Mengambil data dari GBP API...</p>
+    <p class="text-xs text-[#8C8AA0] text-center mt-1">Mungkin memerlukan beberapa menit</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- HASIL REKONSILIASI                                     -->
+<!-- ══════════════════════════════════════════════════════ -->
+{% if result %}
+
+<!-- ── Summary Metrics ────────────────────────────────── -->
+<div class="form-card mb-5">
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="text-sm font-display font-semibold text-[#0F172A]">Hasil Rekonsiliasi</h2>
+    <span class="text-xs text-[#8C8AA0]">
+      Master: <strong class="text-[#0F172A]">{{ master_row_count }}</strong> baris ·
+      API: <strong class="text-[#0F172A]">{{ api_row_count }}</strong> baris
+      {% if master_source_label %} · <code class="text-xs bg-[#EFF6FF] text-[#0F3C8C] px-1.5 py-0.5 rounded font-mono">{{ master_source_label }}</code>{% endif %}
+    </span>
+  </div>
+  <div class="grid grid-cols-3 sm:grid-cols-5 gap-3">
+    <div class="text-center p-3 rounded-xl bg-emerald-50 border border-emerald-100">
+      <div class="text-xl font-bold text-emerald-700 tabular-nums">{{ summary.matched }}</div>
+      <div class="text-xs text-emerald-600 mt-0.5">Matched</div>
+    </div>
+    <div class="text-center p-3 rounded-xl bg-blue-50 border border-blue-100">
+      <div class="text-xl font-bold text-blue-700 tabular-nums">{{ summary.updated }}</div>
+      <div class="text-xs text-blue-600 mt-0.5">Updated</div>
+    </div>
+    <div class="text-center p-3 rounded-xl bg-amber-50 border border-amber-100">
+      <div class="text-xl font-bold text-amber-700 tabular-nums">{{ summary.manual_review }}</div>
+      <div class="text-xs text-amber-600 mt-0.5">Manual Review</div>
+    </div>
+    <div class="text-center p-3 rounded-xl bg-[#EFF6FF] border border-blue-100">
+      <div class="text-xl font-bold text-[#8C8AA0] tabular-nums font-display">{{ summary.not_found }}</div>
+      <div class="text-xs text-[#8C8AA0] mt-0.5">Not Found</div>
+    </div>
+    <div class="text-center p-3 rounded-xl bg-red-50 border border-red-100">
+      <div class="text-xl font-bold text-red-600 tabular-nums font-display">{{ summary.invalid }}</div>
+      <div class="text-xs text-red-400 mt-0.5">Invalid</div>
+    </div>
+  </div>
+  {% if save_result_msg %}
+  <div class="mt-4 flex items-center gap-2 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 px-4 py-3 rounded-xl">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+    </svg>
+    {{ save_result_msg }}
+  </div>
+  {% endif %}
+</div>
+
+<!-- ── Network yang Berubah ───────────────────────────── -->
+<div class="form-card mb-5">
+  <h3 class="text-sm font-display font-semibold text-[#0F172A] mb-3">Network yang Mengalami Perubahan Status Verifikasi</h3>
+
+  {% if changed_rows %}
+  <div class="space-y-2">
+    {% for row in changed_rows %}
+    <div class="flex items-center gap-3 p-3 rounded-xl bg-amber-50 border border-amber-100 text-sm">
+      <svg class="w-4 h-4 text-amber-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
+      </svg>
+      <span class="text-[#0F172A]">
+        <strong>{{ row.identifier_value }}</strong> mengalami perubahan status verifikasi dari
+        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold
+          {% if row.old_status == 'Verified' %}bg-emerald-100 text-emerald-800
+          {% elif row.old_status == 'Duplicate' %}bg-amber-100 text-amber-800
+          {% elif row.old_status == 'Suspended' %}bg-red-100 text-red-800
+          {% else %}bg-slate-100 text-slate-600{% endif %}">
+          {{ row.old_status|default:"—" }}
+        </span>
+        menjadi
+        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold
+          {% if row.new_status == 'Verified' %}bg-emerald-100 text-emerald-800
+          {% elif row.new_status == 'Duplicate' %}bg-amber-100 text-amber-800
+          {% elif row.new_status == 'Suspended' %}bg-red-100 text-red-800
+          {% else %}bg-slate-100 text-slate-600{% endif %}">
+          {{ row.new_status|default:"—" }}
+        </span>.
+      </span>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="flex items-center gap-3 p-3 rounded-xl bg-[#EFF6FF] border border-blue-100 text-sm text-[#8C8AA0]">
+    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+    </svg>
+    Tidak ada network yang mengalami perubahan status verifikasi.
+  </div>
+  {% endif %}
+</div>
+
+<!-- ── Tabel Hasil Pencocokan ─────────────────────────── -->
+<div class="form-card p-0 overflow-hidden">
+  <div class="px-5 py-4 border-b border-[#EFF6FF] flex items-center justify-between">
+    <h3 class="text-sm font-display font-semibold text-[#0F172A]">
+      Tabel Hasil Pencocokan
+      <span class="ml-1.5 text-xs font-medium text-[#8C8AA0] bg-[#EFF6FF] px-2 py-0.5 rounded-full">{{ comparison_rows|length }} baris</span>
+    </h3>
+    <!-- Toggle collapse -->
+    <button onclick="toggleResultTable()"
+            id="toggle-table-btn"
+            class="text-xs font-medium text-[#8C8AA0] hover:text-[#0F172A] transition-colors">
+      Sembunyikan ▲
+    </button>
+  </div>
+
+  <div id="result-table-container">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm" id="comparison-table">
+        <thead>
+          <tr class="bg-[#EFF6FF] border-b border-[#EFF6FF]">
+            <th class="px-5 py-3 text-left text-[10px] font-semibold text-[#8C8AA0] uppercase tracking-wider">Status Match</th>
+            <th class="px-5 py-3 text-left text-[10px] font-semibold text-[#8C8AA0] uppercase tracking-wider">Rule</th>
+            <th class="px-5 py-3 text-left text-[10px] font-semibold text-[#8C8AA0] uppercase tracking-wider">Identifier</th>
+            <th class="px-5 py-3 text-left text-[10px] font-semibold text-[#8C8AA0] uppercase tracking-wider">Status Lama</th>
+            <th class="px-5 py-3 text-left text-[10px] font-semibold text-[#8C8AA0] uppercase tracking-wider">Status Baru</th>
+            <th class="px-5 py-3 text-center text-[10px] font-semibold text-[#8C8AA0] uppercase tracking-wider">Berubah?</th>
+            <th class="px-5 py-3 text-left text-[10px] font-semibold text-[#8C8AA0] uppercase tracking-wider">Catatan</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          {% for row in comparison_rows %}
+          <tr class="hover:bg-[rgba(15,60,140,0.04)] transition-colors {% if row.status_changed %}bg-blue-50/40{% endif %} divide-y divide-[#EFF6FF]">
+            <td class="px-5 py-3">
+              {% with ms=row.match_status %}
+              <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold
+                {% if ms == 'Matched' %}bg-emerald-100 text-emerald-800
+                {% elif ms == 'Not Found' %}bg-slate-100 text-slate-600
+                {% elif ms == 'Invalid' %}bg-red-100 text-red-700
+                {% elif ms == 'Manual Review' %}bg-amber-100 text-amber-800
+                {% else %}bg-slate-100 text-slate-600{% endif %}">
+                {{ ms }}
+              </span>
+              {% endwith %}
+            </td>
+            <td class="px-5 py-3 text-xs text-[#8C8AA0] max-w-24 truncate">{{ row.match_rule }}</td>
+            <td class="px-5 py-3 font-medium text-[#0F172A]">{{ row.identifier_value|default:"—" }}</td>
+            <td class="px-5 py-3">
+              {% if row.old_status %}
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                {% if row.old_status == 'Verified' %}bg-emerald-100 text-emerald-800
+                {% elif row.old_status == 'Duplicate' %}bg-amber-100 text-amber-800
+                {% elif row.old_status == 'Suspended' %}bg-red-100 text-red-800
+                {% else %}bg-slate-100 text-slate-600{% endif %}">
+                {{ row.old_status }}
+              </span>
+              {% else %}—{% endif %}
+            </td>
+            <td class="px-5 py-3">
+              {% if row.new_status %}
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                {% if row.new_status == 'Verified' %}bg-emerald-100 text-emerald-800
+                {% elif row.new_status == 'Duplicate' %}bg-amber-100 text-amber-800
+                {% elif row.new_status == 'Suspended' %}bg-red-100 text-red-800
+                {% else %}bg-slate-100 text-slate-600{% endif %}">
+                {{ row.new_status }}
+              </span>
+              {% else %}—{% endif %}
+            </td>
+            <td class="px-5 py-3 text-center">
+              {% if row.status_changed %}
+              <svg class="w-4 h-4 text-blue-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+              </svg>
+              {% else %}
+              <span class="text-[#8C8AA0]">—</span>
+              {% endif %}
+            </td>
+            <td class="px-5 py-3 text-xs text-[#8C8AA0] max-w-48 truncate">{{ row.change_note|default:"—" }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7" class="px-5 py-8 text-center text-sm text-[#8C8AA0]">Tidak ada data.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ── Download Button — tepat di bawah tabel ────── -->
+    <div class="px-5 py-4 border-t border-[#EFF6FF] flex items-center justify-between">
+      <span class="text-xs text-[#8C8AA0]">
+        Job #{{ job.pk }} disimpan ke database ·
+        {{ comparison_rows|length }} baris
+      </span>
+      {% if job %}
+      <a href="{% url 'gbp:download_reconciliation' job.pk %}"
+         id="btn-download-reconciliation"
+         class="btn-teal hover:-translate-y-0.5 active:scale-95">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+        </svg>
+        Download Hasil Pencocokan
+      </a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% endif %}
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function toggleSourceType(value) {
+    const csvGroup = document.getElementById('csv-upload-group');
+    const sqliteGroup = document.getElementById('sqlite-table-group');
+    const labelCsv = document.getElementById('label-csv');
+    const labelSqlite = document.getElementById('label-sqlite');
+
+    if (value === 'sqlite') {
+      csvGroup.classList.add('hidden');
+      sqliteGroup.classList.remove('hidden');
+      labelSqlite.classList.add('border-[#0F3C8C]', 'bg-[#EFF6FF]');
+      labelSqlite.classList.remove('border-gray-200');
+      labelCsv.classList.remove('border-[#0F3C8C]', 'bg-[#EFF6FF]');
+      labelCsv.classList.add('border-gray-200');
+    } else {
+      csvGroup.classList.remove('hidden');
+      sqliteGroup.classList.add('hidden');
+      labelCsv.classList.add('border-[#0F3C8C]', 'bg-[#EFF6FF]');
+      labelCsv.classList.remove('border-gray-200');
+      labelSqlite.classList.remove('border-[#0F3C8C]', 'bg-[#EFF6FF]');
+      labelSqlite.classList.add('border-gray-200');
+    }
+  }
+
+  function showFileName(input) {
+    const display = document.getElementById('file-name-display');
+    if (input.files && input.files[0]) {
+      display.textContent = '📄 ' + input.files[0].name;
+    }
+  }
+
+  // Show loading overlay saat submit
+  document.getElementById('update-form').addEventListener('submit', function() {
+    document.getElementById('loading-overlay').classList.remove('hidden');
+  });
+
+  // Drag & drop
+  const dropArea = document.getElementById('file-drop-area');
+  const fileInput = document.getElementById('master-file-input');
+  if (dropArea && fileInput) {
+    dropArea.addEventListener('click', () => fileInput.click());
+    dropArea.addEventListener('dragover', (e) => { e.preventDefault(); dropArea.classList.add('border-[#0F3C8C]', 'bg-[#EFF6FF]'); });
+    dropArea.addEventListener('dragleave', () => dropArea.classList.remove('border-[#0F3C8C]', 'bg-[#EFF6FF]'));
+    dropArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropArea.classList.remove('border-[#0F3C8C]', 'bg-[#EFF6FF]');
+      if (e.dataTransfer.files.length) {
+        fileInput.files = e.dataTransfer.files;
+        showFileName(fileInput);
+      }
+    });
+  }
+
+  // Toggle result table
+  let tableVisible = true;
+  function toggleResultTable() {
+    const container = document.getElementById('result-table-container');
+    const btn = document.getElementById('toggle-table-btn');
+    tableVisible = !tableVisible;
+    if (tableVisible) {
+      container.classList.remove('hidden');
+      btn.textContent = 'Sembunyikan ▲';
+    } else {
+      container.classList.add('hidden');
+      btn.textContent = 'Tampilkan ▼';
+    }
+  }
+
+  // Init
+  const initialSource = document.querySelector('input[name="source_type"]:checked');
+  if (initialSource) toggleSourceType(initialSource.value);
+
+  // ── Sales Performance Upload ──────────────────────────────────────
+  const salesDropzone = document.getElementById('sales-dropzone');
+  const salesInput = document.getElementById('sales-csv-input');
+
+  if (salesDropzone && salesInput) {
+    salesDropzone.addEventListener('click', () => salesInput.click());
+    salesDropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      salesDropzone.classList.add('border-[#0F3C8C]', 'bg-[#EFF6FF]');
+    });
+    salesDropzone.addEventListener('dragleave', () => {
+      salesDropzone.classList.remove('border-[#0F3C8C]', 'bg-[#EFF6FF]');
+    });
+    salesDropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      salesDropzone.classList.remove('border-[#0F3C8C]', 'bg-[#EFF6FF]');
+      const file = e.dataTransfer.files[0];
+      if (file) handleSalesUpload(file);
+    });
+    salesInput.addEventListener('change', () => {
+      if (salesInput.files[0]) handleSalesUpload(salesInput.files[0]);
+    });
+  }
+
+  function handleSalesUpload(file) {
+    const label = document.getElementById('sales-file-label');
+    const result = document.getElementById('sales-result');
+    const spinner = document.getElementById('sales-spinner');
+
+    if (!file.name.endsWith('.csv')) {
+      result.innerHTML = '<div class="text-red-600 text-sm mt-2">❌ File harus berformat .csv</div>';
+      return;
+    }
+
+    label.textContent = file.name;
+    result.innerHTML = '';
+    spinner.classList.remove('hidden');
+
+    const formData = new FormData();
+    formData.append('sales_csv', file);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+    fetch("{% url 'gbp:upload_sales' %}", { method: 'POST', body: formData })
+      .then(r => r.json())
+      .then(data => {
+        spinner.classList.add('hidden');
+        if (data.ok) {
+          let html = `<div class="mt-3 p-3 rounded-lg bg-green-50 border border-green-200">
+            <p class="text-green-700 font-semibold text-sm">✅ ${data.message}</p>`;
+          if (data.errors && data.errors.length > 0) {
+            html += `<ul class="mt-2 text-xs text-red-600 list-disc list-inside">`;
+            data.errors.forEach(e => html += `<li>${e}</li>`);
+            html += `</ul>`;
+          }
+          html += '</div>';
+          result.innerHTML = html;
+        } else {
+          result.innerHTML = `<div class="mt-3 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">❌ ${data.error}</div>`;
+        }
+      })
+      .catch(() => {
+        spinner.classList.add('hidden');
+        result.innerHTML = '<div class="mt-3 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">❌ Gagal terhubung ke server.</div>';
+      });
+  }
+</script>
+
+{# ── Sales Performance Upload Section ──────────────────────────────── #}
+<div class="form-card mt-6">
+  <div class="flex items-center justify-between mb-4">
+    <div>
+      <h2 class="text-base font-semibold text-[#0F172A]">📊 Upload Data Performa Penjualan</h2>
+      <p class="text-xs text-[#8C8AA0] mt-0.5">
+        Upload CSV berisi NSA, BP, MSCP, dan NL per cabang. Data akan tampil di popup peta <em>Branch Coverage</em>.
+      </p>
+    </div>
+    <a href="{% url 'gbp:download_sales_template' %}"
+       class="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#0F3C8C] text-[#0F3C8C] text-xs font-medium hover:bg-[#EFF6FF] transition-colors">
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+      </svg>
+      Download Template CSV
+    </a>
+  </div>
+
+  {# Format kolom CSV #}
+  <div class="mb-4 px-3 py-2.5 rounded-lg bg-[#EFF6FF] border border-blue-100 text-xs text-[#0F3C8C]">
+    <strong>Kolom wajib:</strong>
+    <code class="ml-1 font-mono">branch_prefix, branch_name, area, period, nsa, bp, mscp, nl</code>
+    <span class="ml-2 text-[#8C8AA0]">— Format period: YYYY-MM (contoh: 2026-06). BP/MSCP/NL boleh negatif.</span>
+  </div>
+
+  {# Drop zone #}
+  <div id="sales-dropzone"
+       class="relative flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-xl py-8 cursor-pointer transition-all hover:border-[#0F3C8C] hover:bg-[#EFF6FF]">
+    <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+      <path stroke-linecap="round" stroke-linejoin="round"
+            d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+    </svg>
+    <p class="text-sm text-[#8C8AA0]">Drag & drop file CSV di sini, atau <span class="text-[#0F3C8C] font-medium">klik untuk pilih</span></p>
+    <p id="sales-file-label" class="text-xs text-[#0F172A] font-medium"></p>
+    <input type="file" id="sales-csv-input" accept=".csv" class="hidden">
+  </div>
+
+  {# Spinner & hasil #}
+  <div id="sales-spinner" class="hidden flex items-center gap-2 mt-3 text-sm text-[#0F3C8C]">
+    <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+    </svg>
+    Memproses file...
+  </div>
+  <div id="sales-result"></div>
+</div>
+{% endblock %}

@@ -1,0 +1,20 @@
+/credentials.json
+/token.json
+
+# Cache
+*_cache.pkl
+__pycache__/
+
+# Virtual Environment
+.venv/
+env/
+
+# GIS / Shapefiles (Ukurannya terlalu besar untuk Github)
+*.shp
+*.shx
+*.dbf
+*.prj
+*.qmd
+*.cpg
+*.7z
+gbp_monitor/gbp/static/gbp/batas-administrasi-indonesia-master/

@@ -1,0 +1,372 @@
+{% extends "gbp/base.html" %}
+{% block title %}Store Data{% endblock %}
+
+{% block breadcrumb %}
+<span class="text-[#8C8AA0] text-sm">Dashboard</span>
+<span class="text-[#8C8AA0] mx-2 text-sm">/</span>
+<span class="text-[#0F172A] font-medium text-sm">Store Data</span>
+{% endblock %}
+
+{% block content %}
+
+<style>
+  /* ── Filter pill controls ─────────────────────────────── */
+  .filter-bar {
+    background: #fff;
+    border: 1px solid rgba(15,60,140,0.1);
+    border-radius: 16px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    box-shadow: 0 2px 8px rgba(15,60,140,0.06);
+    margin-bottom: 16px;
+  }
+  .pill-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 6px 12px; border-radius: 999px;
+    border: 1px solid rgba(15,60,140,0.15);
+    background: #fff; color: #0F172A;
+    font-size: 0.8125rem; font-weight: 500; cursor: pointer;
+    transition: all 0.15s; white-space: nowrap;
+  }
+  .pill-btn:hover { border-color: #0F3C8C; background: #EFF6FF; color: #0F3C8C; }
+  .pill-btn svg { width: 12px; height: 12px; color: #8C8AA0; }
+  .search-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px; border-radius: 999px;
+    border: 1px solid rgba(15,60,140,0.15);
+    background: #fff;
+    font-size: 0.8125rem; color: #0F172A;
+    min-width: 160px; transition: all 0.15s;
+  }
+  .search-pill:focus-within { border-color: #0F3C8C; box-shadow: 0 0 0 3px rgba(15,60,140,0.12); }
+  .search-pill input { border: none; outline: none; background: transparent; font-size: 0.8125rem; width: 100%; }
+  .search-pill input::placeholder { color: #8C8AA0; }
+  .search-pill svg { width: 13px; height: 13px; color: #8C8AA0; flex-shrink: 0; }
+  .export-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 6px 14px; border-radius: 999px;
+    border: 1px solid rgba(15,60,140,0.15);
+    background: #fff; color: #0F3C8C;
+    font-size: 0.8125rem; font-weight: 600; cursor: pointer;
+    transition: all 0.15s; text-decoration: none;
+  }
+  .export-pill:hover { border-color: #0F3C8C; background: #0F3C8C; color: #fff; }
+  .export-pill svg { width: 13px; height: 13px; }
+  .divider-v { width: 1px; height: 20px; background: rgba(15,60,140,0.1); flex-shrink: 0; }
+
+  /* ── Table ────────────────────────────────────────────── */
+  .dt-table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+  .dt-table thead tr { border-bottom: 1px solid rgba(15,60,140,0.08); }
+  .dt-table th {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #8C8AA0;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+    background: #EFF6FF;
+  }
+  .dt-table tbody tr {
+    border-bottom: 1px solid #EFF6FF;
+    transition: background 0.12s;
+    cursor: pointer;
+  }
+  .dt-table tbody tr:last-child { border-bottom: none; }
+  .dt-table tbody tr:hover { background: rgba(15,60,140,0.04); }
+  .dt-table tbody tr.row-selected { background: rgba(15,60,140,0.08) !important; }
+  .dt-table td { padding: 11px 16px; color: #0F172A; vertical-align: middle; }
+
+  /* Store code badge */
+  .store-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    background: #EFF6FF;
+    color: #0F3C8C;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  /* Inline status badge styles for table */
+  .tbadge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: 999px;
+    font-size: 0.72rem; font-weight: 600; white-space: nowrap;
+  }
+  .tbadge::before { content:''; width:6px; height:6px; border-radius:50%; display:inline-block; }
+  .tbadge-verified   { background:#ECFDF5; color:#15803D; } .tbadge-verified::before   { background:#22C55E; }
+  .tbadge-duplicate  { background:#FFF7ED; color:#9A3412; } .tbadge-duplicate::before  { background:#F97316; }
+  .tbadge-suspended  { background:#FEF2F2; color:#B91C1C; } .tbadge-suspended::before  { background:#EF4444; }
+  .tbadge-unverified { background:#EFF6FF; color:#8C8AA0; } .tbadge-unverified::before { background:#8C8AA0; }
+
+  /* Row checkbox */
+  .row-check { width: 15px; height: 15px; cursor: pointer; accent-color: #0F3C8C; border-radius: 4px; }
+  .col-check { width: 36px; padding-left: 16px !important; padding-right: 4px !important; }
+
+  /* Action link */
+  .act-link {
+    display: inline-flex; justify-content: center; align-items: center;
+    min-width: 76px;
+    padding: 4px 10px; border-radius: 8px;
+    border: 1px solid rgba(15,60,140,0.15);
+    font-size: 0.73rem; font-weight: 500;
+    color: #0F3C8C; text-decoration: none;
+    transition: all 0.12s;
+  }
+  .act-link:hover { border-color: #0F3C8C; background: #0F3C8C; color: #fff; }
+
+  /* Pagination */
+  .pag-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; border-radius: 10px;
+    border: 1px solid rgba(15,60,140,0.15);
+    font-size: 0.8rem; color: #8C8AA0;
+    text-decoration: none; transition: all 0.12s;
+  }
+  .pag-btn:hover { background: #EFF6FF; border-color: #0F3C8C; color: #0F3C8C; }
+  .pag-btn.active { background: #0F3C8C; border-color: #0F3C8C; color: #fff; font-weight: 700; }
+
+  /* Status filter pills */
+  .status-cb-group { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .status-cb-label {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 10px; border-radius: 999px;
+    border: 1.5px solid rgba(15,60,140,0.15);
+    font-size: 0.78rem; font-weight: 500;
+    cursor: pointer; transition: all 0.15s; user-select: none;
+    color: #8C8AA0;
+  }
+  .status-cb-label input[type="checkbox"] { display: none; }
+  .status-cb-label .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .status-cb-label.active { color: #0F172A; border-color: currentColor; background: #EFF6FF; }
+  .status-cb-label.verified.active   { color: #15803D; background: #ECFDF5; border-color: #22C55E; }
+  .status-cb-label.duplicate.active  { color: #9A3412; background: #FFF7ED; border-color: #F97316; }
+  .status-cb-label.suspended.active  { color: #B91C1C; background: #FEF2F2; border-color: #EF4444; }
+  .status-cb-label.unverified.active { color: #8C8AA0; background: #EFF6FF; border-color: #8C8AA0; }
+</style>
+
+{% if no_data %}
+<div class="flex flex-col items-center justify-center py-24 text-center">
+  <div class="w-20 h-20 rounded-3xl bg-[#EFF6FF] flex items-center justify-center mb-5">
+    <svg class="w-10 h-10 text-[#8C8AA0]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M3 14h18M10 6h11M10 18h11M3 6h4M3 18h4"/>
+    </svg>
+  </div>
+  <h2 class="text-xl font-semibold text-[#0F172A] mb-2">Belum Ada Data</h2>
+  <p class="text-[#8C8AA0] text-sm">Jalankan fetch data terlebih dahulu.</p>
+</div>
+
+{% else %}
+
+<!-- ── Page Header ─────────────────────────────────────── -->
+<div class="mb-5 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+  <div>
+    <h1 class="text-2xl font-display font-bold text-[#0F172A] tracking-tight">Store Data</h1>
+    <p class="text-sm text-[#8C8AA0] mt-0.5">
+      Menampilkan <strong class="text-[#0F3C8C]">{{ total_count }}</strong> lokasi{% if sel_run %} dari Run #{{ sel_run.run_id }}{% endif %}
+    </p>
+  </div>
+</div>
+
+<!-- ── Filter Bar ─────────────────────────────────────── -->
+<form method="GET" id="filter-form">
+  <input type="hidden" name="run_id" value="{{ sel_run_id }}">
+  <div class="filter-bar">
+
+    <!-- Search -->
+    <div class="search-pill" style="flex:1;min-width:180px;max-width:300px;">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+      </svg>
+      <input type="text" name="search" value="{{ search }}" id="search-input" placeholder="Cari nama, store code...">
+    </div>
+
+    <div class="divider-v"></div>
+
+    <!-- Status Filter Pills -->
+    <div class="status-cb-group">
+      {% for s in all_statuses %}
+      <label class="status-cb-label
+        {% if s == 'Verified' %}verified{% elif s == 'Duplicate' %}duplicate{% elif s == 'Suspended' %}suspended{% else %}unverified{% endif %}
+        {% if s in statuses %}active{% endif %}">
+        <input type="checkbox" name="statuses" value="{{ s }}"
+               {% if s in statuses %}checked{% endif %}
+               onchange="this.closest('label').classList.toggle('active', this.checked); document.getElementById('filter-form').submit()">
+        <span class="dot
+          {% if s == 'Verified' %}bg-green-500{% elif s == 'Duplicate' %}bg-orange-500{% elif s == 'Suspended' %}bg-red-500{% else %}bg-[#8C8AA0]{% endif %}"></span>
+        {{ s }}
+      </label>
+      {% endfor %}
+    </div>
+
+    <div class="divider-v"></div>
+
+    <!-- Sort -->
+    <select name="sort" onchange="document.getElementById('filter-form').submit()"
+            class="pill-btn" style="cursor:pointer;appearance:none;padding-right:22px;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238C8AA0'/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 8px center;">
+      <option value="business_name" {% if sort_col == 'business_name' %}selected{% endif %}>Nama Bisnis</option>
+      <option value="store_code"    {% if sort_col == 'store_code' %}selected{% endif %}>Store Code</option>
+      <option value="status"        {% if sort_col == 'status' %}selected{% endif %}>Status</option>
+      <option value="fetched_at"    {% if sort_col == 'fetched_at' %}selected{% endif %}>Waktu Fetch</option>
+    </select>
+    <select name="order" onchange="document.getElementById('filter-form').submit()"
+            class="pill-btn" style="cursor:pointer;appearance:none;padding-right:22px;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238C8AA0'/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 8px center;">
+      <option value="asc"  {% if sort_order == 'asc' %}selected{% endif %}>A → Z</option>
+      <option value="desc" {% if sort_order == 'desc' %}selected{% endif %}>Z → A</option>
+    </select>
+
+    <div class="divider-v"></div>
+
+    <!-- Export -->
+    <a href="{% url 'gbp:export_csv' %}?run_id={{ sel_run_id }}{% if search %}&search={{ search }}{% endif %}{% for s in statuses %}&status={{ s }}{% endfor %}"
+       id="btn-export-csv" class="export-pill">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+      </svg>
+      CSV
+    </a>
+    <a href="{% url 'gbp:export_excel' %}?run_id={{ sel_run_id }}{% if search %}&search={{ search }}{% endif %}{% for s in statuses %}&status={{ s }}{% endfor %}"
+       id="btn-export-excel" class="export-pill">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+      </svg>
+      Excel
+    </a>
+
+    {% if search or statuses|length < all_statuses|length %}
+    <a href="{% url 'gbp:data_table' %}?run_id={{ sel_run_id }}" class="pill-btn text-[#8C8AA0] hover:text-red-500 hover:border-red-300">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+      Reset
+    </a>
+    {% endif %}
+  </div>
+</form>
+
+<!-- ── Table ────────────────────────────────────────── -->
+<div class="table-card">
+  <div class="overflow-x-auto">
+    <table class="dt-table" id="data-table">
+      <thead>
+        <tr>
+          <th class="col-check"><input type="checkbox" class="row-check" id="check-all" title="Pilih semua"></th>
+          <th>Store Code</th>
+          <th>Nama Bisnis</th>
+          <th class="hidden md:table-cell">Alamat</th>
+          <th class="hidden lg:table-cell">Lat / Lng</th>
+          <th>Status</th>
+          <th class="hidden lg:table-cell">Fetched At</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for snap in page_obj %}
+        <tr data-id="{{ snap.id }}" onclick="toggleRow(this)">
+          <td class="col-check" onclick="event.stopPropagation()">
+            <input type="checkbox" class="row-check row-cb" data-id="{{ snap.id }}">
+          </td>
+          <td>
+            <span class="store-badge">{{ snap.store_code|default:"—" }}</span>
+          </td>
+          <td style="font-weight:500;max-width:200px;" class="truncate">
+            {{ snap.business_name|default:"—" }}
+          </td>
+          <td class="hidden md:table-cell text-[#8C8AA0] text-xs truncate" style="max-width:200px;">
+            {{ snap.address|default:"—" }}
+          </td>
+          <td class="hidden lg:table-cell" style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:#8C8AA0;">
+            {% if snap.latitude and snap.longitude %}
+              {{ snap.latitude|floatformat:5 }}<br>{{ snap.longitude|floatformat:5 }}
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            {% with s=snap.status %}
+            <span class="tbadge
+              {% if s == 'Verified' %}tbadge-verified
+              {% elif s == 'Duplicate' %}tbadge-duplicate
+              {% elif s == 'Suspended' %}tbadge-suspended
+              {% else %}tbadge-unverified{% endif %}">
+              {{ s }}
+            </span>
+            {% endwith %}
+          </td>
+          <td class="hidden lg:table-cell" style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:#8C8AA0;">
+            {{ snap.fetched_at|default:"—" }}
+          </td>
+          <td onclick="event.stopPropagation()">
+            <div class="flex items-center gap-1.5">
+              <a href="{% url 'gbp:location_detail' snap.id %}" class="act-link">Detail</a>
+              {% if snap.maps_uri %}
+              <a href="{{ snap.maps_uri }}" target="_blank" rel="noopener noreferrer" class="act-link">Maps ↗</a>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8" style="padding:60px 16px;text-align:center;">
+            <div class="flex flex-col items-center gap-3">
+              <div class="w-14 h-14 rounded-2xl bg-[#EFF6FF] flex items-center justify-center">
+                <svg class="w-7 h-7 text-[#8C8AA0]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+              </div>
+              <p class="text-sm font-medium text-[#0F172A]">Tidak ada data yang cocok</p>
+              <p class="text-xs text-[#8C8AA0]">Coba ubah filter atau kata kunci pencarian</p>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  {% if paginator.num_pages > 1 %}
+  <div class="px-4 py-3 border-t border-[#EFF6FF] flex items-center justify-between">
+    <span class="text-xs text-[#8C8AA0]">
+      Halaman {{ page_obj.number }} dari {{ paginator.num_pages }} &nbsp;·&nbsp; {{ total_count }} total
+    </span>
+    <div class="flex gap-1.5 items-center">
+      {% if page_obj.has_previous %}
+      <a href="?run_id={{ sel_run_id }}&page=1{% if search %}&search={{ search }}{% endif %}{% if sort_col %}&sort={{ sort_col }}&order={{ sort_order }}{% endif %}{% for s in statuses %}&statuses={{ s }}{% endfor %}" class="pag-btn">«</a>
+      <a href="?run_id={{ sel_run_id }}&page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if sort_col %}&sort={{ sort_col }}&order={{ sort_order }}{% endif %}{% for s in statuses %}&statuses={{ s }}{% endfor %}" class="pag-btn">‹</a>
+      {% endif %}
+      <span class="pag-btn active">{{ page_obj.number }}</span>
+      {% if page_obj.has_next %}
+      <a href="?run_id={{ sel_run_id }}&page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if sort_col %}&sort={{ sort_col }}&order={{ sort_order }}{% endif %}{% for s in statuses %}&statuses={{ s }}{% endfor %}" class="pag-btn">›</a>
+      <a href="?run_id={{ sel_run_id }}&page={{ paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if sort_col %}&sort={{ sort_col }}&order={{ sort_order }}{% endif %}{% for s in statuses %}&statuses={{ s }}{% endfor %}" class="pag-btn">»</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+  function toggleRow(tr) {
+    tr.classList.toggle('row-selected');
+    const cb = tr.querySelector('.row-cb');
+    if (cb) cb.checked = tr.classList.contains('row-selected');
+  }
+  document.getElementById('check-all').addEventListener('change', function() {
+    document.querySelectorAll('.row-cb').forEach(function(cb) {
+      cb.checked = this.checked;
+      cb.closest('tr').classList.toggle('row-selected', this.checked);
+    }.bind(this));
+  });
+  document.querySelectorAll('.row-cb').forEach(function(cb) {
+    cb.addEventListener('change', function() {
+      this.closest('tr').classList.toggle('row-selected', this.checked);
+    });
+  });
+</script>
+
+{% endif %}
+{% endblock %}

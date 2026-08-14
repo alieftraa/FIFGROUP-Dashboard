@@ -1,0 +1,2123 @@
+{% extends "gbp/base.html" %}
+{% block title %}Map View{% endblock %}
+
+{% block breadcrumb %}
+<span class="text-slate-500 text-sm">Dashboard</span>
+<span class="text-slate-300 mx-1">/</span>
+<span class="text-slate-700 font-medium text-sm">Map View</span>
+{% endblock %}
+
+{% block extra_head %}
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+<!-- Leaflet MarkerCluster CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+
+<style>
+  /* ── Viewport-aware layout: override page-content padding/overflow ── */
+  #page-content {
+    padding: 0 !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+  }
+
+  #map-view-root {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+  }
+
+  #map-page-header {
+    flex-shrink: 0;
+    padding: 10px 20px 8px;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.7);
+    background: rgba(255, 255, 255, 0.9);
+  }
+
+  #map-body {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  /* ── LEFT SIDEBAR ── */
+  #map-sidebar {
+    width: 252px;
+    flex-shrink: 0;
+    overflow-y: auto;
+    background: rgba(255, 255, 255, 0.85);
+    border-right: 1px solid rgba(226, 232, 240, 0.6);
+    display: flex;
+    flex-direction: column;
+    padding: 10px 9px;
+    gap: 0;
+    scrollbar-width: thin;
+  }
+
+  .sb-section {
+    background: rgba(255, 255, 255, 0.88);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    border-radius: 11px;
+    padding: 9px 11px;
+    margin-bottom: 7px;
+  }
+
+  .sb-section:last-child {
+    margin-bottom: 0;
+  }
+
+  .sb-label {
+    font-size: 9.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #94a3b8;
+    margin-bottom: 6px;
+  }
+
+  /* ── MODE TOGGLE ── */
+  .mode-toggle {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background: rgba(237, 233, 254, 0.4);
+    border: 1px solid rgba(167, 139, 250, 0.2);
+    border-radius: 9px;
+    padding: 3px;
+  }
+
+  .mode-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5.5px 8px;
+    border-radius: 6px;
+    font-size: 11.5px;
+    font-weight: 500;
+    color: #94a3b8;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: none;
+    background: transparent;
+    text-align: left;
+    width: 100%;
+    text-decoration: none;
+  }
+
+  .mode-btn:hover {
+    color: #5b21b6;
+    background: rgba(237, 233, 254, 0.5);
+  }
+
+  .mode-btn.active {
+    background: white;
+    color: #5b21b6;
+    font-weight: 600;
+    box-shadow: 0 2px 7px rgba(139, 92, 246, 0.18);
+  }
+
+  /* ── FILTER CHIPS ── */
+  .filter-chip {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 4.5px 9px;
+    border-radius: 7px;
+    border: 1.5px solid rgba(203, 213, 225, 0.6);
+    background: rgba(255, 255, 255, 0.7);
+    font-size: 11.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+    user-select: none;
+  }
+
+  .filter-chip:has(input:checked) {
+    border-color: #7c3aed;
+    background: rgba(237, 233, 254, 0.6);
+  }
+
+  .filter-chip input {
+    position: absolute;
+    width: 0;
+    height: 0;
+    opacity: 0;
+  }
+
+  .chip-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .apply-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #7c3aed, #5b21b6);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 7px;
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-top: 7px;
+    box-shadow: 0 3px 9px rgba(124, 58, 237, 0.22);
+  }
+
+  .apply-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 5px 13px rgba(124, 58, 237, 0.32);
+  }
+
+  .apply-btn:active {
+    transform: scale(0.97);
+  }
+
+  /* ── STAT ROWS ── */
+  .stat-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 7px;
+    border-radius: 7px;
+    background: rgba(248, 250, 252, 0.9);
+    border: 1px solid rgba(226, 232, 240, 0.5);
+    margin-bottom: 4px;
+  }
+
+  .stat-row:last-child {
+    margin-bottom: 0;
+  }
+
+  .stat-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .stat-num {
+    font-size: 17px;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stat-lbl {
+    font-size: 9.5px;
+    color: #64748b;
+    font-weight: 500;
+    margin-top: 1px;
+  }
+
+  /* ── LEGEND ── */
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: #475569;
+    padding: 1.5px 0;
+    font-weight: 500;
+  }
+
+  .legend-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .legend-icon-wrap {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ── ISSUE BTN ── */
+  .issue-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 9px;
+    border-radius: 7px;
+    border: 1.5px solid rgba(251, 191, 36, 0.5);
+    background: rgba(255, 244, 220, 0.7);
+    color: #92400e;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.15s;
+  }
+
+  .issue-btn:hover {
+    background: rgba(251, 191, 36, 0.2);
+    border-color: #f59e0b;
+  }
+
+  /* ── RIGHT MAP AREA ── */
+  #map-right {
+    flex: 1;
+    min-width: 0;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── LEAFLET MAP ── */
+  #leaflet-map {
+    flex: 1;
+    min-height: 0;
+    z-index: 1;
+  }
+
+  /* ── COVERAGE MAP (Folium) ── */
+  #coverage-map-wrap {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #map-coverage {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  #map-coverage iframe,
+  #map-coverage .folium-map {
+    width: 100% !important;
+    height: 100% !important;
+    border: 0;
+    display: block;
+  }
+
+  #map-coverage>div,
+  #map-coverage>div>div {
+    height: 100% !important;
+    padding-bottom: 0 !important;
+  }
+
+  /* ── LOADING OVERLAY ── */
+  #map-loading {
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.88);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+    gap: 10px;
+    font-size: 13px;
+    color: #5b21b6;
+    font-weight: 600;
+  }
+
+  .spin {
+    width: 30px;
+    height: 30px;
+    border: 3px solid rgba(124, 58, 237, 0.2);
+    border-top-color: #7c3aed;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* ── MODAL ── */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 9000;
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .modal-box {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    max-width: 680px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .modal-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .modal-body {
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  .modal-close {
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
+    border: none;
+    background: rgba(100, 116, 139, 0.1);
+    color: #64748b;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    transition: all 0.15s;
+  }
+
+  .modal-close:hover {
+    background: rgba(100, 116, 139, 0.2);
+  }
+
+  /* ── COVERAGE CARDS ── */
+  .glass-card {
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    box-shadow: 0 4px 24px rgba(139, 92, 246, 0.07), 0 1.5px 6px rgba(0, 0, 0, 0.05);
+  }
+
+  .cov-card {
+    background: white;
+    border: 1px solid #E2E8F0;
+    border-radius: 10px;
+    padding: 10px 14px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .cov-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  }
+
+  .cov-filter-tab {
+    padding: 4px 12px;
+    border-radius: 9999px;
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1.5px solid #E2E8F0;
+    background: white;
+    color: #64748B;
+    transition: all 0.15s;
+  }
+
+  .cov-filter-tab:hover {
+    border-color: #7c3aed;
+    color: #5b21b6;
+  }
+
+  .cov-filter-tab.active {
+    background: linear-gradient(135deg, #7c3aed, #5b21b6);
+    color: white;
+    border-color: #7c3aed;
+  }
+
+  .cov-table th {
+    padding: 8px 12px;
+    text-align: left;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #94A3B8;
+    background: #F8FAFC;
+    border-bottom: 2px solid #E2E8F0;
+  }
+
+  .cov-table td {
+    padding: 8px 12px;
+    font-size: 12px;
+    color: #334155;
+    border-bottom: 1px solid #F1F5F9;
+  }
+
+  .cov-table tr:hover td {
+    background: rgba(124, 58, 237, 0.03);
+  }
+
+  .issue-badge {
+    background: rgba(255, 244, 220, 0.9);
+    color: #92400e;
+    font-size: 10.5px;
+    padding: 1.5px 7px;
+    border-radius: 9999px;
+    border: 1px solid rgba(251, 191, 36, 0.3);
+  }
+
+  /* ── POPUP ── */
+  .leaflet-popup-content-wrapper {
+    border-radius: 14px !important;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15) !important;
+    padding: 0 !important;
+    overflow: hidden;
+  }
+
+  .leaflet-popup-content {
+    margin: 0 !important;
+    width: auto !important;
+  }
+
+  .leaflet-popup-tip-container {
+    display: none;
+  }
+
+  /* Cluster override */
+  .marker-cluster div {
+    background: rgba(124, 58, 237, 0.85) !important;
+    color: white !important;
+    font-weight: 700 !important;
+    font-size: 11px !important;
+    font-family: 'Inter', sans-serif !important;
+  }
+
+  .marker-cluster {
+    background: rgba(124, 58, 237, 0.15) !important;
+  }
+
+  /* ── PERFORMANCE PANEL ── */
+  #perf-panel {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 380px;
+    max-width: 100%;
+    background: #fff;
+    border-left: 1px solid rgba(226, 232, 240, 0.8);
+    box-shadow: -6px 0 28px rgba(0, 0, 0, 0.10);
+    display: flex;
+    flex-direction: column;
+    z-index: 800;
+    transform: translateX(100%);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  #perf-panel.open {
+    transform: translateX(0);
+  }
+
+  #perf-panel-header {
+    flex-shrink: 0;
+    padding: 12px 16px 10px;
+    border-bottom: 1px solid #f1f5f9;
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.04), rgba(91, 33, 182, 0.03));
+  }
+
+  #perf-panel-body {
+    flex: 1;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    padding: 0;
+  }
+
+  /* Tab system */
+  .perf-tab-bar {
+    display: flex;
+    gap: 2px;
+    background: rgba(241, 245, 249, 0.8);
+    padding: 3px;
+    border-radius: 9px;
+    margin-bottom: 10px;
+  }
+
+  .perf-tab {
+    flex: 1;
+    text-align: center;
+    padding: 5px 8px;
+    border-radius: 7px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    transition: all 0.15s;
+  }
+
+  .perf-tab.active {
+    background: white;
+    color: #5b21b6;
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Period selector */
+  .perf-period-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: #f8fafc;
+    border-bottom: 1px solid #f1f5f9;
+    flex-shrink: 0;
+  }
+
+  .perf-period-bar select {
+    font-size: 11.5px;
+    padding: 4px 7px;
+    border-radius: 7px;
+    border: 1.5px solid #e2e8f0;
+    background: white;
+    color: #1e293b;
+    font-weight: 600;
+    outline: none;
+    cursor: pointer;
+  }
+
+  .perf-period-bar select:focus {
+    border-color: #7c3aed;
+  }
+
+  .perf-vs-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    flex: 1;
+    text-align: center;
+  }
+
+  /* Metric cards grid */
+  .perf-cards-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+    padding: 12px 14px;
+  }
+
+  .perf-cards-grid .full-width {
+    grid-column: 1 / -1;
+  }
+
+  .perf-metric-card {
+    background: #fafafa;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 11px 13px;
+    transition: box-shadow 0.2s;
+  }
+
+  .perf-metric-card:hover {
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.07);
+  }
+
+  .perf-metric-label {
+    font-size: 9.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #94a3b8;
+    margin-bottom: 4px;
+  }
+
+  .perf-metric-desc {
+    font-size: 9px;
+    color: #c4b5fd;
+    margin-bottom: 6px;
+    font-style: italic;
+    line-height: 1.3;
+  }
+
+  .perf-metric-value {
+    font-size: 15px;
+    font-weight: 800;
+    color: #1e293b;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+    word-break: break-all;
+  }
+
+  .perf-metric-prev {
+    font-size: 10.5px;
+    color: #94a3b8;
+    margin-top: 3px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .perf-metric-diff {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 5px;
+    padding: 2px 5px;
+    display: inline-flex;
+  }
+
+  .trend-positive {
+    color: #16a34a;
+    background: #f0fdf4;
+  }
+
+  .trend-negative {
+    color: #dc2626;
+    background: #fef2f2;
+  }
+
+  .trend-neutral {
+    color: #64748b;
+    background: #f1f5f9;
+  }
+
+  /* Loading / empty states */
+  .perf-state-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+    gap: 10px;
+  }
+
+  .perf-state-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(124, 58, 237, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .perf-state-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #334155;
+  }
+
+  .perf-state-sub {
+    font-size: 11.5px;
+    color: #94a3b8;
+    line-height: 1.5;
+  }
+
+  /* Popup performance btn */
+  .popup-perf-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 8px;
+    width: 100%;
+    padding: 6px 11px;
+    border-radius: 8px;
+    border: 1.5px solid rgba(124, 58, 237, 0.3);
+    background: rgba(237, 233, 254, 0.5);
+    color: #5b21b6;
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s;
+  }
+
+  .popup-perf-btn:hover {
+    background: rgba(237, 233, 254, 0.9);
+    border-color: #7c3aed;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{% if no_data %}
+<div
+  style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;text-align:center;">
+  <div
+    style="width:72px;height:72px;border-radius:20px;background:rgba(255,255,255,0.8);border:1px solid rgba(226,232,240,0.8);display:flex;align-items:center;justify-content:center;margin-bottom:20px;">
+    <svg style="width:36px;height:36px;color:#c4b5fd;" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+      stroke-width="1.5">
+      <path stroke-linecap="round" stroke-linejoin="round"
+        d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+    </svg>
+  </div>
+  <h2 style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:6px;">Belum Ada Data</h2>
+  <p style="font-size:13px;color:#94a3b8;">Jalankan fetch data terlebih dahulu.</p>
+</div>
+
+{% else %}
+
+<div id="map-view-root">
+
+  <!-- ── PAGE HEADER ── -->
+  <div id="map-page-header">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span
+          style="width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,#7c3aed,#5b21b6);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg style="width:13px;height:13px;color:white;" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            stroke-width="2.2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+          </svg>
+        </span>
+        <div>
+          <h1 style="font-size:15px;font-weight:700;color:#1e293b;line-height:1.2;">Map View</h1>
+          <p style="font-size:11px;color:#94a3b8;margin:0;">Persebaran lokasi GBP berdasarkan koordinat</p>
+        </div>
+      </div>
+      {% if all_runs %}
+      <form method="GET" style="display:flex;align-items:center;gap:7px;">
+        <input type="hidden" name="mode" value="{{ selected_mode }}">
+        <label style="font-size:11px;color:#64748b;font-weight:500;">Run:</label>
+        <select name="run_id" onchange="this.form.submit()"
+          style="font-size:11px;padding:4px 8px;border-radius:7px;border:1px solid #e2e8f0;background:white;outline:none;">
+          {% for run in all_runs %}
+          <option value="{{ run.run_id }}" {% if run.run_id==sel_run_id %}selected{% endif %}>
+            #{{ run.run_id }} — {{ run.run_date }} ({{ run.total }} lokasi)
+          </option>
+          {% endfor %}
+        </select>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ── MAIN BODY ── -->
+  <div id="map-body">
+
+    {% if selected_mode == "coverage" %}
+    <!-- ═══════════════════ COVERAGE SIDEBAR ═══════════════════ -->
+    <div id="map-sidebar">
+
+      <div class="sb-section">
+        <div class="sb-label">Mode Tampilan</div>
+        <div class="mode-toggle">
+          <a href="?run_id={{ sel_run_id }}&mode=status" class="mode-btn">
+            <svg style="width:13px;height:13px;flex-shrink:0;" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+              stroke-width="2.2">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Berdasarkan Status
+          </a>
+          <a href="?run_id={{ sel_run_id }}&mode=network" class="mode-btn">
+            <svg style="width:13px;height:13px;flex-shrink:0;" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+              stroke-width="2.2">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+            </svg>
+            Berdasarkan Jenis Network
+          </a>
+          <a href="?run_id={{ sel_run_id }}&mode=coverage" class="mode-btn active">
+            <svg style="width:13px;height:13px;flex-shrink:0;" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+              stroke-width="2.2">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M2.25 21h19.5M3.75 3v18h16.5V3H3.75zm3.75 3.75h3v3h-3v-3zm6.75 0h3v3h-3v-3zm-6.75 6h3v3h-3v-3zm6.75 0h3v3h-3v-3z" />
+            </svg>
+            Branch Coverage
+          </a>
+        </div>
+      </div>
+
+      <div class="sb-section">
+        <div class="sb-label">Pilih Cabang</div>
+        <form method="GET" id="coverage-branch-form">
+          <input type="hidden" name="run_id" value="{{ sel_run_id }}">
+          <input type="hidden" name="mode" value="coverage">
+          <select name="branch_prefix" onchange="this.form.submit()"
+            style="width:100%;padding:6px 8px;font-size:11.5px;border-radius:7px;border:1px solid #e2e8f0;background:white;outline:none;">
+            <option value="">— Semua Cabang —</option>
+            {% for b in branch_list %}
+            <option value="{{ b.prefix }}" {% if b.prefix==selected_branch_prefix %}selected{% endif %}>
+              {{ b.name }} ({{ b.prefix }}) — {{ b.total_covered }}
+            </option>
+            {% endfor %}
+          </select>
+        </form>
+      </div>
+
+      <div class="sb-section">
+        <div class="sb-label">Legenda Cabang</div>
+        <div style="display:flex;flex-direction:column;gap:4px;max-height:180px;overflow-y:auto;">
+          {% for b in branch_list|slice:":14" %}
+          <div class="legend-item">
+            <span class="legend-dot" style="background:{{ b.color }};"></span>
+            <span style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+              title="{{ b.name }}">{{ b.name }} ({{ b.prefix }})</span>
+          </div>
+          {% endfor %}
+          {% if branch_list|length > 14 %}
+          <div style="font-size:10.5px;color:#94a3b8;margin-top:3px;">+{{ branch_list|length|add:"-14" }} lainnya</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="sb-section">
+        <div class="sb-label">Catatan</div>
+        <p style="font-size:10.5px;color:#64748b;line-height:1.5;">Coverage dihitung berdasarkan 3 digit pertama store
+          code dan jenis network dari kolom NETWORK master data.</p>
+      </div>
+
+    </div>
+
+    <!-- ═══════════════════ COVERAGE MAP RIGHT ═══════════════════ -->
+    <div id="map-right" style="overflow-y:auto;">
+
+      {% if coverage_summary %}
+      <div
+        style="display:grid;grid-template-columns:repeat(8,1fr);gap:6px;padding:10px 14px;background:#f8fafc;border-bottom:1px solid #e2e8f0;flex-shrink:0;">
+        <div class="cov-card">
+          <div style="font-size:18px;font-weight:700;color:#1e293b;font-variant-numeric:tabular-nums;">{{
+            coverage_summary.total_branches }}</div>
+          <div style="font-size:10px;color:#64748b;font-weight:500;margin-top:2px;">Total Cabang</div>
+        </div>
+        <div class="cov-card">
+          <div style="font-size:18px;font-weight:700;color:#7c3aed;font-variant-numeric:tabular-nums;">{{
+            coverage_summary.total_pos }}</div>
+          <div style="font-size:10px;color:#64748b;font-weight:500;margin-top:2px;">Total Pos</div>
+        </div>
+        <div class="cov-card">
+          <div style="font-size:18px;font-weight:700;color:#ea580c;font-variant-numeric:tabular-nums;">{{
+            coverage_summary.total_kios }}</div>
+          <div style="font-size:10px;color:#64748b;font-weight:500;margin-top:2px;">Total Kios</div>
+        </div>
+        <div class="cov-card">
+          <div style="font-size:18px;font-weight:700;color:#0891b2;font-variant-numeric:tabular-nums;">{{
+            coverage_summary.total_subkios }}</div>
+          <div style="font-size:10px;color:#64748b;font-weight:500;margin-top:2px;">Total Subkios</div>
+        </div>
+        <div class="cov-card">
+          <div style="font-size:18px;font-weight:700;color:#7c3aed;font-variant-numeric:tabular-nums;">{{
+            coverage_summary.avg_coverage }}</div>
+          <div style="font-size:10px;color:#64748b;font-weight:500;margin-top:2px;">Avg Coverage</div>
+        </div>
+        <div class="cov-card" style="grid-column:span 3;">
+          <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:11px;">
+            <div>
+              <div style="font-size:9.5px;color:#94a3b8;font-weight:700;text-transform:uppercase;margin-bottom:2px;">
+                Terbanyak</div><span style="font-weight:700;color:#1e293b;">{{ coverage_summary.max_coverage_branch
+                }}</span> <span style="color:#64748b;">({{ coverage_summary.max_coverage_count }})</span>
+            </div>
+            <div>
+              <div style="font-size:9.5px;color:#94a3b8;font-weight:700;text-transform:uppercase;margin-bottom:2px;">
+                Need Verif</div><span style="font-weight:700;color:#d97706;">{{ coverage_summary.max_need_verif_branch
+                }}</span> <span style="color:#64748b;">({{ coverage_summary.max_need_verif_count }})</span>
+            </div>
+            <div>
+              <div style="font-size:9.5px;color:#94a3b8;font-weight:700;text-transform:uppercase;margin-bottom:2px;">
+                Suspended</div><span style="font-weight:700;color:#dc2626;">{{ coverage_summary.max_suspended_branch
+                }}</span> <span style="color:#64748b;">({{ coverage_summary.max_suspended_count }})</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if coverage_map_html %}
+      <div id="coverage-map-wrap" style="height:420px;">
+        <div id="map-coverage">{{ coverage_map_html|safe }}</div>
+      </div>
+      {% else %}
+      <div
+        style="height:420px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f8fafc;">
+        <p style="font-size:13px;font-weight:600;color:#64748b;">Tidak ada data coverage yang bisa ditampilkan</p>
+        <p style="font-size:11px;color:#94a3b8;margin-top:4px;">Pastikan master data memiliki cabang dengan koordinat
+          valid</p>
+      </div>
+      {% endif %}
+
+      {% if selected_branch_detail %}
+      <div style="padding:14px 16px;">
+        <div class="glass-card" style="border-radius:14px;overflow:hidden;">
+          <div
+            style="padding:12px 16px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div
+                style="width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:{{ selected_branch_detail.color }}20;">
+                <div style="width:12px;height:12px;border-radius:50%;background:{{ selected_branch_detail.color }};">
+                </div>
+              </div>
+              <div>
+                <div style="font-size:13px;font-weight:700;color:#1e293b;">{{ selected_branch_detail.branch.name }}
+                </div>
+                <div style="font-size:10.5px;color:#94a3b8;">Prefix: <span
+                    style="font-family:monospace;font-weight:700;color:{{ selected_branch_detail.color }};">{{
+                    selected_branch_detail.branch.prefix }}</span> · Area: {{
+                  selected_branch_detail.branch.area|default:"—" }}</div>
+              </div>
+            </div>
+            {% if selected_branch_detail.manual_review %}
+            <div
+              style="display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:7px;background:#fef2f2;border:1px solid #fecaca;">
+              <svg style="width:12px;height:12px;color:#ef4444;" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+              </svg>
+              <span style="font-size:11px;font-weight:600;color:#991b1b;">Manual Review</span>
+            </div>
+            {% endif %}
+          </div>
+          <div style="padding:10px 16px;border-bottom:1px solid #f8fafc;background:#fafafa;">
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;">
+              <div>
+                <div style="font-size:9.5px;color:#94a3b8;font-weight:700;text-transform:uppercase;">Total</div>
+                <div style="font-size:17px;font-weight:700;color:#1e293b;margin-top:2px;">{{
+                  selected_branch_detail.summary.total }}</div>
+              </div>
+              <div>
+                <div style="font-size:9.5px;color:#94a3b8;font-weight:700;text-transform:uppercase;">Pos</div>
+                <div style="font-size:17px;font-weight:700;color:#7c3aed;margin-top:2px;">{{
+                  selected_branch_detail.summary.pos }}</div>
+              </div>
+              <div>
+                <div style="font-size:9.5px;color:#94a3b8;font-weight:700;text-transform:uppercase;">Kios</div>
+                <div style="font-size:17px;font-weight:700;color:#ea580c;margin-top:2px;">{{
+                  selected_branch_detail.summary.kios }}</div>
+              </div>
+              <div>
+                <div style="font-size:9.5px;color:#94a3b8;font-weight:700;text-transform:uppercase;">Subkios</div>
+                <div style="font-size:17px;font-weight:700;color:#0891b2;margin-top:2px;">{{
+                  selected_branch_detail.summary.subkios }}</div>
+              </div>
+              <div>
+                <div style="font-size:9.5px;color:#94a3b8;font-weight:700;text-transform:uppercase;">Verif Rate</div>
+                <div style="font-size:17px;font-weight:700;color:#16a34a;margin-top:2px;">{{
+                  selected_branch_detail.summary.verification_rate }}%</div>
+              </div>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;">
+              <span
+                style="font-size:10.5px;font-weight:600;color:#166534;background:#f0fdf4;padding:3px 9px;border-radius:9999px;border:1px solid #bbf7d0;">✅
+                {{ selected_branch_detail.summary.verified }} Verified</span>
+              <span
+                style="font-size:10.5px;font-weight:600;color:#475569;background:#f8fafc;padding:3px 9px;border-radius:9999px;border:1px solid #e2e8f0;">⚪
+                {{ selected_branch_detail.summary.need_verification }} Need Verif</span>
+              <span
+                style="font-size:10.5px;font-weight:600;color:#374151;background:#f9fafb;padding:3px 9px;border-radius:9999px;border:1px solid #e5e7eb;">❓
+                {{ selected_branch_detail.summary.unverified }} Unverified</span>
+              <span
+                style="font-size:10.5px;font-weight:600;color:#991b1b;background:#fef2f2;padding:3px 9px;border-radius:9999px;border:1px solid #fecaca;">🚫
+                {{ selected_branch_detail.summary.suspended }} Suspended</span>
+              <span
+                style="font-size:10.5px;font-weight:600;color:#92400e;background:#fffbeb;padding:3px 9px;border-radius:9999px;border:1px solid #fde68a;">⚠️
+                {{ selected_branch_detail.summary.duplicate }} Duplicate</span>
+            </div>
+          </div>
+          <div style="padding:10px 16px 8px;display:flex;gap:6px;flex-wrap:wrap;">
+            <button onclick="filterCoverageTable('all')" class="cov-filter-tab active" data-filter="all">All ({{
+              selected_branch_detail.summary.total }})</button>
+            <button onclick="filterCoverageTable('Pos')" class="cov-filter-tab" data-filter="Pos">Pos ({{
+              selected_branch_detail.summary.pos }})</button>
+            <button onclick="filterCoverageTable('Kios')" class="cov-filter-tab" data-filter="Kios">Kios ({{
+              selected_branch_detail.summary.kios }})</button>
+            <button onclick="filterCoverageTable('Subkios')" class="cov-filter-tab" data-filter="Subkios">Subkios ({{
+              selected_branch_detail.summary.subkios }})</button>
+          </div>
+          <div style="overflow-x:auto;max-height:260px;overflow-y:auto;">
+            <table class="w-full cov-table" id="coverage-detail-table">
+              <thead>
+                <tr>
+                  <th>Store Code</th>
+                  <th>Nama Network</th>
+                  <th>Jenis</th>
+                  <th>Status</th>
+                  <th>Alamat</th>
+                  <th>Koordinat</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for net in selected_branch_detail.covered_networks %}
+                <tr data-network-type="{{ net.network }}">
+                  <td style="font-family:monospace;font-size:11px;color:#94a3b8;">{{ net.store_code|default:"—" }}</td>
+                  <td style="font-weight:600;font-size:12px;color:#1e293b;">{{ net.name|default:"—" }}</td>
+                  <td>{% include "gbp/components/network_badge.html" with network=net.network %}</td>
+                  <td>{% include "gbp/components/status_badge.html" with status=net.status %}</td>
+                  <td
+                    style="font-size:11px;color:#64748b;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+                    title="{{ net.address }}">{{ net.address|default:"—"|truncatechars:40 }}</td>
+                  <td style="font-family:monospace;font-size:10.5px;color:#94a3b8;">
+                    {% if net.has_coordinates %}{{ net.latitude|floatformat:5 }}, {{ net.longitude|floatformat:5 }}
+                    {% else %}<span style="color:#f59e0b;">—</span>{% endif %}
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="6" style="text-align:center;padding:20px;color:#94a3b8;font-size:12px;">Tidak ada network
+                    yang ter-cover</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if coverage_warnings.has_warnings %}
+      <div style="padding:0 16px 16px;">
+        {% if coverage_warnings.duplicate_prefixes %}
+        <div class="glass-card" style="border-radius:12px;overflow:hidden;margin-bottom:10px;">
+          <div
+            style="padding:10px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(254,202,202,0.4);">
+            <span style="font-size:12px;font-weight:700;color:#991b1b;">Duplicate Branch Prefix</span>
+            <span class="issue-badge"
+              style="background:rgba(254,202,202,0.8);color:#991b1b;border-color:rgba(248,113,113,0.3);">{{
+              coverage_warnings.duplicate_prefixes|length }} prefix</span>
+          </div>
+          <div style="padding:10px 14px;display:flex;flex-wrap:wrap;gap:6px;">
+            {% for dp in coverage_warnings.duplicate_prefixes %}
+            <span
+              style="font-size:11px;font-weight:600;color:#991b1b;background:#fef2f2;padding:4px 10px;border-radius:7px;border:1px solid #fecaca;">Prefix
+              {{ dp.prefix }} — {{ dp.count }} cabang</span>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        {% if coverage_warnings.unmapped %}
+        <div class="glass-card" style="border-radius:12px;overflow:hidden;">
+          <div
+            style="padding:10px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(251,191,36,0.2);">
+            <span style="font-size:12px;font-weight:700;color:#92400e;">Unmapped Network</span>
+            <span class="issue-badge">{{ coverage_warnings.unmapped|length }} network</span>
+          </div>
+          <div style="overflow-x:auto;">
+            <table style="width:100%;font-size:12px;">
+              <thead>
+                <tr style="border-bottom:1px solid #f1f5f9;">
+                  <th
+                    style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;background:#f8fafc;">
+                    Store Code</th>
+                  <th
+                    style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;background:#f8fafc;">
+                    Nama</th>
+                  <th
+                    style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;background:#f8fafc;">
+                    Prefix</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for u in coverage_warnings.unmapped|slice:":15" %}
+                <tr style="border-bottom:1px solid #f8fafc;">
+                  <td style="padding:7px 12px;font-family:monospace;font-size:10.5px;color:#94a3b8;">{{
+                    u.store_code|default:"—" }}</td>
+                  <td style="padding:7px 12px;font-weight:500;color:#334155;">{{ u.name|default:"—" }}</td>
+                  <td style="padding:7px 12px;font-family:monospace;font-size:10.5px;font-weight:700;color:#d97706;">{{
+                    u.prefix }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+
+    </div><!-- /#map-right coverage -->
+
+    {% else %}
+    <!-- ═══════════════════ STANDARD SIDEBAR (Status / Network) ═════════════ -->
+    <div id="map-sidebar">
+
+      <!-- Mode Toggle -->
+      <div class="sb-section">
+        <div class="sb-label">Mode Tampilan</div>
+        <div class="mode-toggle">
+          <button type="button" id="btn-mode-status" onclick="setMode('status')"
+            class="mode-btn {% if selected_mode == 'status' %}active{% endif %}">
+            <svg style="width:13px;height:13px;flex-shrink:0;" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+              stroke-width="2.2">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Berdasarkan Status
+          </button>
+          <button type="button" id="btn-mode-network" onclick="setMode('network')"
+            class="mode-btn {% if selected_mode == 'network' %}active{% endif %}">
+            <svg style="width:13px;height:13px;flex-shrink:0;" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+              stroke-width="2.2">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+            </svg>
+            Berdasarkan Jenis Network
+          </button>
+          <a href="?run_id={{ sel_run_id }}&mode=coverage" class="mode-btn">
+            <svg style="width:13px;height:13px;flex-shrink:0;" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+              stroke-width="2.2">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M2.25 21h19.5M3.75 3v18h16.5V3H3.75zm3.75 3.75h3v3h-3v-3zm6.75 0h3v3h-3v-3zm-6.75 6h3v3h-3v-3zm6.75 0h3v3h-3v-3z" />
+            </svg>
+            Branch Coverage
+          </a>
+        </div>
+      </div>
+
+      <!-- Filter Status -->
+      <div class="sb-section" id="panel-filter-status">
+        <div class="sb-label">Filter Status</div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <label class="filter-chip"><input type="checkbox" id="cb-verified" value="Verified" checked><span
+              class="chip-dot" style="background:#22c55e;"></span><span style="color:#166534;">Verified</span></label>
+          <label class="filter-chip"><input type="checkbox" id="cb-need-verif" value="Need Verification" checked><span
+              class="chip-dot" style="background:#f59e0b;"></span><span style="color:#92400e;">Need
+              Verification</span></label>
+          <label class="filter-chip"><input type="checkbox" id="cb-duplicate" value="Duplicate" checked><span
+              class="chip-dot" style="background:#f97316;"></span><span style="color:#c2410c;">Duplicate</span></label>
+          <label class="filter-chip"><input type="checkbox" id="cb-suspended" value="Suspended" checked><span
+              class="chip-dot" style="background:#ef4444;"></span><span style="color:#991b1b;">Suspended</span></label>
+        </div>
+        <button class="apply-btn" onclick="applyFilters()">Terapkan Filter</button>
+      </div>
+
+      <!-- Filter Network -->
+      <div class="sb-section" id="panel-filter-network" style="display:none;">
+        <div class="sb-label">Filter Network</div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <label class="filter-chip"><input type="checkbox" id="cb-cabang" value="Cabang" checked><span class="chip-dot"
+              style="background:#3b82f6;"></span><span style="color:#1d4ed8;">Cabang</span></label>
+          <label class="filter-chip"><input type="checkbox" id="cb-pos" value="Pos" checked><span class="chip-dot"
+              style="background:#8b5cf6;"></span><span style="color:#5b21b6;">Pos</span></label>
+          <label class="filter-chip"><input type="checkbox" id="cb-kios" value="Kios" checked><span class="chip-dot"
+              style="background:#f97316;"></span><span style="color:#c2410c;">Kios</span></label>
+          <label class="filter-chip"><input type="checkbox" id="cb-subkios" value="Subkios" checked><span
+              class="chip-dot" style="background:#06b6d4;"></span><span style="color:#0e7490;">Sub Kios</span></label>
+          <label class="filter-chip"><input type="checkbox" id="cb-lainnya" value="Lainnya" checked><span
+              class="chip-dot" style="background:#94a3b8;"></span><span style="color:#475569;">Lainnya</span></label>
+        </div>
+        <button class="apply-btn" onclick="applyFilters()">Terapkan Filter</button>
+      </div>
+
+      <!-- Stats -->
+      <div class="sb-section">
+        <div class="sb-label">Statistik Peta</div>
+        <div class="stat-row">
+          <div class="stat-icon" style="background:linear-gradient(135deg,#dbeafe,#bfdbfe);">
+            <svg style="width:13px;height:13px;color:#2563eb;" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd"
+                d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
+                clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div>
+            <div class="stat-num" id="stat-displayed">{{ with_coords_count }}</div>
+            <div class="stat-lbl">Ditampilkan di Peta</div>
+          </div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-icon" style="background:linear-gradient(135deg,#fef3c7,#fde68a);">
+            <svg style="width:13px;height:13px;color:#d97706;" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+              stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+            </svg>
+          </div>
+          <div>
+            <div class="stat-num" style="color:#d97706;">{{ without_coords_count }}</div>
+            <div class="stat-lbl">Tanpa Koordinat</div>
+          </div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-icon" style="background:linear-gradient(135deg,#ede9fe,#ddd6fe);">
+            <svg style="width:13px;height:13px;color:#7c3aed;" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+              stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 7h18M3 12h18M3 17h18" />
+            </svg>
+          </div>
+          <div>
+            <div class="stat-num" style="color:#7c3aed;" id="stat-filtered">{{ total_count }}</div>
+            <div class="stat-lbl">Total Filtered</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Legend -->
+      <div class="sb-section">
+        <div class="sb-label">Legenda</div>
+        <div
+          style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;margin-top:2px;">
+          Warna Status</div>
+        <div style="display:flex;flex-direction:column;gap:2px;margin-bottom:8px;">
+          <div class="legend-item"><span class="legend-dot" style="background:#22c55e;"></span>Verified</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#f59e0b;"></span>Need Verification</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#f97316;"></span>Duplicate</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#ef4444;"></span>Suspended</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#94a3b8;"></span>Unknown</div>
+        </div>
+        <div
+          style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">
+          Ikon Jenis Network</div>
+        <div style="display:flex;flex-direction:column;gap:2px;">
+          <div class="legend-item">
+            <div class="legend-icon-wrap"><svg width="14" height="14" viewBox="0 0 28 32" fill="#3b82f6">
+                <path d="M14 2L2 10v16a2 2 0 002 2h7v-7h6v7h7a2 2 0 002-2V10z" />
+              </svg></div>
+            Cabang (Gedung)
+          </div>
+          <div class="legend-item">
+            <div class="legend-icon-wrap"><svg width="14" height="14" viewBox="0 0 28 32" fill="#8b5cf6">
+                <path d="M14 2L1 13h3v12a1 1 0 001 1h4v-8h10v8h4a1 1 0 001-1V13h3z" />
+              </svg></div>
+            Pos (Rumah)
+          </div>
+          <div class="legend-item">
+            <div class="legend-icon-wrap"><svg width="14" height="14" viewBox="0 0 28 32" fill="none" stroke="#f97316"
+                stroke-width="2">
+                <rect x="2" y="12" width="24" height="15" rx="2" />
+                <path d="M2 12l3-7h18l3 7" />
+              </svg></div>
+            Kios (Toko)
+          </div>
+          <div class="legend-item">
+            <div class="legend-icon-wrap"><svg width="14" height="14" viewBox="0 0 28 32" fill="none" stroke="#06b6d4"
+                stroke-width="2">
+                <rect x="2" y="12" width="24" height="15" rx="2" />
+                <path d="M2 12l3-7h18l3 7" />
+                <circle cx="14" cy="20" r="3" fill="#06b6d4" />
+              </svg></div>
+            Sub Kios (Toko+)
+          </div>
+        </div>
+      </div>
+
+      <!-- Masalah Koordinat -->
+      {% if coord_issues %}
+      <div class="sb-section">
+        <button class="issue-btn" onclick="openCoordModal()">
+          <svg style="width:12px;height:12px;flex-shrink:0;" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            stroke-width="2.2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+          </svg>
+          <span style="flex:1;text-align:left;">Masalah Koordinat: {{ coord_issues|length }} lokasi</span>
+          <svg style="width:10px;height:10px;opacity:0.5;" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
+      {% endif %}
+
+    </div><!-- /#map-sidebar standard -->
+
+    <!-- ═══════════════════ LEAFLET MAP ═══════════════════ -->
+    <div id="map-right" style="position:relative;flex:1;min-width:0;display:flex;flex-direction:column;">
+      <div id="map-loading">
+        <div class="spin"></div>
+        <span>Memuat data peta...</span>
+      </div>
+      <div id="leaflet-map"></div>
+
+      <!-- ═══════════════ PERFORMANCE PANEL ═══════════════ -->
+      <div id="perf-panel">
+
+        <!-- Header -->
+        <div id="perf-panel-header">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div
+                style="width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,#7c3aed,#5b21b6);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <svg style="width:13px;height:13px;color:white;" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                  stroke-width="2.2">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+                </svg>
+              </div>
+              <div>
+                <div style="font-size:12px;font-weight:700;color:#1e293b;" id="perf-branch-name">Performance Report
+                </div>
+                <div style="font-size:10px;color:#94a3b8;" id="perf-branch-meta">—</div>
+              </div>
+            </div>
+            <button id="perf-close-btn" onclick="closePerfPanel()"
+              style="width:26px;height:26px;border-radius:7px;border:none;background:rgba(100,116,139,0.1);color:#64748b;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:all 0.15s;"
+              onmouseenter="this.style.background='rgba(100,116,139,0.2)'"
+              onmouseleave="this.style.background='rgba(100,116,139,0.1)'">×</button>
+          </div>
+          <!-- Tab bar -->
+          <div class="perf-tab-bar">
+            <button class="perf-tab active" id="perf-tab-info" onclick="switchPerfTab('info')">📋 Informasi</button>
+            <button class="perf-tab" id="perf-tab-perf" onclick="switchPerfTab('perf')">📊 Performance</button>
+          </div>
+        </div>
+
+        <!-- Panel Body -->
+        <div id="perf-panel-body">
+
+          <!-- TAB: INFORMASI -->
+          <div id="perf-tab-info-content" style="padding:12px 14px;">
+            <div id="perf-info-detail" style="display:flex;flex-direction:column;gap:8px;">
+              <!-- Filled by JS -->
+            </div>
+          </div>
+
+          <!-- TAB: PERFORMANCE -->
+          <div id="perf-tab-perf-content" style="display:none;">
+
+            <!-- Period selector -->
+            <div class="perf-period-bar">
+              <span style="font-size:11px;font-weight:600;color:#64748b;">Periode:</span>
+              <select id="perf-sel-month" onchange="onPerfPeriodChange()">
+                <option value="1">Januari</option>
+                <option value="2">Februari</option>
+                <option value="3">Maret</option>
+                <option value="4">April</option>
+                <option value="5">Mei</option>
+                <option value="6">Juni</option>
+                <option value="7">Juli</option>
+                <option value="8">Agustus</option>
+                <option value="9">September</option>
+                <option value="10">Oktober</option>
+                <option value="11">November</option>
+                <option value="12">Desember</option>
+              </select>
+              <select id="perf-sel-year" onchange="onPerfPeriodChange()"></select>
+              <span style="font-size:9.5px;color:#94a3b8;margin-left:auto;">vs tahun lalu</span>
+            </div>
+
+            <!-- Compare label -->
+            <div id="perf-compare-label"
+              style="padding:5px 14px;font-size:10.5px;color:#64748b;background:#f8fafc;border-bottom:1px solid #f1f5f9;">
+              &nbsp;</div>
+
+            <!-- Content area: loading / empty / cards -->
+            <div id="perf-content-area">
+
+              <!-- Loading state -->
+              <div id="perf-loading" class="perf-state-box" style="display:none;">
+                <div class="perf-state-icon">
+                  <div class="spin" style="width:22px;height:22px;border-width:2px;"></div>
+                </div>
+                <span class="perf-state-title">Memuat data...</span>
+              </div>
+
+              <!-- No data state -->
+              <div id="perf-empty" class="perf-state-box" style="display:none;">
+                <div class="perf-state-icon">
+                  <svg style="width:22px;height:22px;color:#c4b5fd;" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24" stroke-width="1.5">\n
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75z" />
+                  </svg>
+                </div>
+                <span class="perf-state-title">Data belum tersedia</span>
+                <span class="perf-state-sub">Data NSA, OSA, CD, Profit, dan NL untuk periode ini belum tersedia.<br>Coba
+                  pilih periode lain.</span>
+              </div>
+
+              <!-- Error state -->
+              <div id="perf-error" class="perf-state-box" style="display:none;">
+                <div class="perf-state-icon" style="background:rgba(220,38,38,0.08);">
+                  <svg style="width:22px;height:22px;color:#dc2626;" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24" stroke-width="1.5">\n
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                  </svg>
+                </div>
+                <span class="perf-state-title">Gagal memuat data</span>
+                <span class="perf-state-sub" id="perf-error-msg">Terjadi kesalahan saat memuat data performance.</span>
+              </div>
+
+              <!-- Non-cabang notice -->
+              <div id="perf-not-cabang" class="perf-state-box" style="display:none;">
+                <div class="perf-state-icon" style="background:rgba(100,116,139,0.08);">
+                  <svg style="width:22px;height:22px;color:#94a3b8;" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24" stroke-width="1.5">\n
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M13.5 18.375H18M18 18.375v-1.5M18 16.875V15M18 15v-1.5M18 13.5H13.5M13.5 13.5V12M13.5 12H9M9 12V6.75M9 6.75H13.5M13.5 6.75V8.25M6 18.375h1.5M6 18.375V15m0 3.375V12m0-3.375H7.5M7.5 8.625V12m0-3.375H6" />
+                  </svg>
+                </div>
+                <span class="perf-state-title">Tidak tersedia</span>
+                <span class="perf-state-sub">Performance report hanya tersedia untuk Cabang.</span>
+              </div>
+
+              <!-- Metric Cards -->
+              <div id="perf-cards" class="perf-cards-grid" style="display:none;">
+                <!-- NSA -->
+                <div class="perf-metric-card">
+                  <div class="perf-metric-label">NSA</div>
+                  <div class="perf-metric-desc">Nett Service Asset</div>
+                  <div class="perf-metric-value" id="mc-nsa-curr">—</div>
+                  <div class="perf-metric-prev" id="mc-nsa-prev">vs —</div>
+                  <div id="mc-nsa-diff" class="perf-metric-diff trend-neutral">—</div>
+                </div>
+                <!-- OSA -->
+                <div class="perf-metric-card">
+                  <div class="perf-metric-label">OSA</div>
+                  <div class="perf-metric-desc">NSA dalam Unit</div>
+                  <div class="perf-metric-value" id="mc-osa-curr">—</div>
+                  <div class="perf-metric-prev" id="mc-osa-prev">vs —</div>
+                  <div id="mc-osa-diff" class="perf-metric-diff trend-neutral">—</div>
+                </div>
+                <!-- CD -->
+                <div class="perf-metric-card">
+                  <div class="perf-metric-label">CD</div>
+                  <div class="perf-metric-desc">Cycle Delinquent</div>
+                  <div class="perf-metric-value" id="mc-cd-curr">—</div>
+                  <div class="perf-metric-prev" id="mc-cd-prev">vs —</div>
+                  <div id="mc-cd-diff" class="perf-metric-diff trend-neutral">—</div>
+                </div>
+                <!-- Profit -->
+                <div class="perf-metric-card">
+                  <div class="perf-metric-label">Profit</div>
+                  <div class="perf-metric-desc">Profit Cabang</div>
+                  <div class="perf-metric-value" id="mc-profit-curr">—</div>
+                  <div class="perf-metric-prev" id="mc-profit-prev">vs —</div>
+                  <div id="mc-profit-diff" class="perf-metric-diff trend-neutral">—</div>
+                </div>
+                <!-- NL -->
+                <div class="perf-metric-card full-width">
+                  <div style="display:flex;align-items:center;gap:10px;">
+                    <div style="flex:1;">
+                      <div class="perf-metric-label">NL</div>
+                      <div class="perf-metric-desc">Nett Losses</div>
+                      <div class="perf-metric-value" id="mc-nl-curr">—</div>
+                      <div class="perf-metric-prev" id="mc-nl-prev">vs —</div>
+                      <div id="mc-nl-diff" class="perf-metric-diff trend-neutral">—</div>
+                    </div>
+                    <div style="flex:1;padding-left:12px;border-left:1px solid #f1f5f9;">
+                      <div
+                        style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#94a3b8;margin-bottom:4px;">
+                        Info NL</div>
+                      <div style="font-size:10.5px;color:#64748b;line-height:1.55;">Nett loss setelah mempertimbangkan
+                        total pembiayaan &amp; bunga dikurangi jumlah yang berhasil ditagih. <span
+                          style="color:#dc2626;font-weight:600;">Nilai lebih tinggi = kerugian lebih besar.</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div><!-- /#perf-cards -->
+
+            </div><!-- /#perf-content-area -->
+          </div><!-- /#perf-tab-perf-content -->
+
+        </div><!-- /#perf-panel-body -->
+      </div><!-- /#perf-panel -->
+
+    </div>
+
+    {% endif %}
+  </div><!-- /#map-body -->
+</div><!-- /#map-view-root -->
+
+<!-- ═══ COORD ISSUE MODAL ═══ -->
+{% if coord_issues %}
+<div id="coord-modal" class="modal-backdrop" style="display:none;" onclick="if(event.target===this)closeCoordModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div
+          style="width:28px;height:28px;border-radius:7px;background:rgba(251,191,36,0.15);display:flex;align-items:center;justify-content:center;">
+          <svg style="width:13px;height:13px;color:#d97706;" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            stroke-width="2.2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+          </svg>
+        </div>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:#1e293b;">Masalah Koordinat</div>
+          <div style="font-size:11px;color:#94a3b8;">{{ coord_issues|length }} lokasi tidak memiliki koordinat valid
+          </div>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeCoordModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <table style="width:100%;font-size:12px;">
+        <thead>
+          <tr style="position:sticky;top:0;background:white;z-index:1;">
+            <th
+              style="padding:10px 14px;text-align:left;font-size:10.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;border-bottom:1px solid #f1f5f9;">
+              Store Code</th>
+            <th
+              style="padding:10px 14px;text-align:left;font-size:10.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;border-bottom:1px solid #f1f5f9;">
+              Nama Bisnis</th>
+            <th
+              style="padding:10px 14px;text-align:left;font-size:10.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;border-bottom:1px solid #f1f5f9;">
+              Alamat</th>
+            <th
+              style="padding:10px 14px;text-align:left;font-size:10.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;border-bottom:1px solid #f1f5f9;">
+              Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in coord_issues %}
+          <tr style="border-bottom:1px solid #f8fafc;">
+            <td style="padding:9px 14px;font-family:monospace;font-size:10.5px;color:#94a3b8;">{{
+              s.store_code|default:"—" }}</td>
+            <td style="padding:9px 14px;font-weight:500;color:#334155;font-size:11.5px;">{{ s.business_name|default:"—"
+              }}</td>
+            <td style="padding:9px 14px;font-size:11px;color:#64748b;">{{ s.address|default:"—"|truncatechars:55 }}</td>
+            <td style="padding:9px 14px;"><span class="issue-badge">{{ s.coord_status|default:"UNKNOWN" }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% if selected_mode != "coverage" %}
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script>
+  /* ─────────────────────────────────────────────────────────────
+     Map View — Client-Side Leaflet Controller
+     ───────────────────────────────────────────────────────────── */
+
+  const RUN_ID = '{{ sel_run_id }}';
+  const API_URL = '{% url "gbp:map_data_api" %}?run_id=' + RUN_ID;
+  const INDONESIA_CENTER = [-2.5, 118.0];
+  const INDONESIA_ZOOM = 5;
+
+  /* Status → color */
+  const STATUS_COLORS = {
+    'Verified': '#22c55e',
+    'Need Verification': '#f59e0b',
+    'Duplicate': '#f97316',
+    'Suspended': '#ef4444',
+  };
+  function getStatusColor(s) { return STATUS_COLORS[s] || '#94a3b8'; }
+
+  /* Network → color (for network mode) */
+  const NET_COLORS = {
+    'Cabang': '#3b82f6',
+    'Pos': '#8b5cf6',
+    'Kios': '#f97316',
+    'Subkios': '#06b6d4',
+    'Lainnya': '#94a3b8',
+  };
+  function getNetColor(n) { return NET_COLORS[n] || '#94a3b8'; }
+
+  /* ── SVG marker creators ── */
+  function svgCabang(c, b) {
+    return `<svg xmlns='http://www.w3.org/2000/svg' width='28' height='32' viewBox='0 0 28 32'><defs><filter id='sh'><feDropShadow dx='0' dy='2' stdDeviation='1.5' flood-opacity='0.3'/></filter></defs><g filter='url(#sh)'><path d='M14 2L2 10v16a2 2 0 002 2h7v-7h6v7h7a2 2 0 002-2V10z' fill='${c}' stroke='${b}' stroke-width='1.2'/><rect x='6' y='14' width='4' height='4' rx='0.5' fill='white' opacity='0.7'/><rect x='18' y='14' width='4' height='4' rx='0.5' fill='white' opacity='0.7'/></g></svg>`;
+  }
+  function svgPos(c, b) {
+    return `<svg xmlns='http://www.w3.org/2000/svg' width='28' height='32' viewBox='0 0 28 32'><defs><filter id='sh2'><feDropShadow dx='0' dy='2' stdDeviation='1.5' flood-opacity='0.3'/></filter></defs><g filter='url(#sh2)'><path d='M14 2L1 13h3v12a1 1 0 001 1h4v-8h10v8h4a1 1 0 001-1V13h3z' fill='${c}' stroke='${b}' stroke-width='1.2'/><rect x='11' y='18' width='6' height='7' rx='0.5' fill='white' opacity='0.6'/></g></svg>`;
+  }
+  function svgKios(c, b) {
+    return `<svg xmlns='http://www.w3.org/2000/svg' width='28' height='32' viewBox='0 0 28 32'><defs><filter id='sh3'><feDropShadow dx='0' dy='2' stdDeviation='1.5' flood-opacity='0.3'/></filter></defs><g filter='url(#sh3)'><rect x='2' y='13' width='24' height='14' rx='2' fill='${c}' stroke='${b}' stroke-width='1.2'/><path d='M2 13l3-7h18l3 7z' fill='${c}' stroke='${b}' stroke-width='1.2' stroke-linejoin='round'/><rect x='5' y='17' width='7' height='7' rx='1' fill='white' opacity='0.65'/><rect x='16' y='17' width='7' height='7' rx='1' fill='white' opacity='0.65'/></g></svg>`;
+  }
+  function svgSubkios(c, b) {
+    return `<svg xmlns='http://www.w3.org/2000/svg' width='28' height='32' viewBox='0 0 28 32'><defs><filter id='sh4'><feDropShadow dx='0' dy='2' stdDeviation='1.5' flood-opacity='0.3'/></filter></defs><g filter='url(#sh4)'><rect x='2' y='13' width='24' height='14' rx='2' fill='${c}' stroke='${b}' stroke-width='1.2'/><path d='M2 13l3-7h18l3 7z' fill='${c}' stroke='${b}' stroke-width='1.2' stroke-linejoin='round'/><rect x='5' y='17' width='7' height='7' rx='1' fill='white' opacity='0.65'/><rect x='16' y='17' width='7' height='7' rx='1' fill='white' opacity='0.65'/><circle cx='14' cy='20.5' r='2.5' fill='white' opacity='0.9'/></g></svg>`;
+  }
+  function svgPin(c, b) {
+    return `<svg xmlns='http://www.w3.org/2000/svg' width='24' height='28' viewBox='0 0 24 28'><defs><filter id='sh5'><feDropShadow dx='0' dy='2' stdDeviation='1.5' flood-opacity='0.25'/></filter></defs><g filter='url(#sh5)'><path d='M12 2C7.03 2 3 6.03 3 11c0 7.25 9 17 9 17s9-9.75 9-17c0-4.97-4.03-9-9-9z' fill='${c}' stroke='${b}' stroke-width='1.1'/><circle cx='12' cy='11' r='3' fill='white' opacity='0.75'/></g></svg>`;
+  }
+
+  function makeIcon(loc, mode) {
+    const nt = loc.network_type;
+    const fill = mode === 'network' ? getNetColor(nt) : getStatusColor(loc.status);
+    const border = fill;
+    let svg, w, h;
+    if (nt === 'Cabang') { svg = svgCabang(fill, border); w = 28; h = 32; }
+    else if (nt === 'Pos') { svg = svgPos(fill, border); w = 28; h = 32; }
+    else if (nt === 'Kios') { svg = svgKios(fill, border); w = 28; h = 32; }
+    else if (nt === 'Subkios') { svg = svgSubkios(fill, border); w = 28; h = 32; }
+    else { svg = svgPin(fill, border); w = 24; h = 28; }
+    return L.divIcon({ html: svg, iconSize: [w, h], iconAnchor: [w / 2, h], popupAnchor: [0, -h], className: '' });
+  }
+
+  function buildPopup(loc) {
+    const sc = getStatusColor(loc.status);
+    const nc = getNetColor(loc.network_type);
+    const mapsLink = loc.maps_uri
+      ? `<a href="${loc.maps_uri}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;color:#7c3aed;font-size:11px;font-weight:600;text-decoration:none;margin-top:6px;"><svg width='11' height='11' fill='none' stroke='currentColor' viewBox='0 0 24 24' stroke-width='2'><path d='M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14'/></svg>Google Maps</a>`
+      : '';
+
+    // Performance button — hanya untuk Cabang
+    const perfBtn = loc.network_type === 'Cabang'
+      ? `<button class="popup-perf-btn" onclick="openPerfPanel(${JSON.stringify(loc)})" type="button">
+        <svg width='12' height='12' fill='none' stroke='currentColor' viewBox='0 0 24 24' stroke-width='2.2'><path stroke-linecap='round' stroke-linejoin='round' d='M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z'/></svg>
+        Performance Report
+       </button>`
+      : '';
+
+    return `<div style="font-family:Inter,system-ui,sans-serif;width:276px;">
+    <div style="padding:11px 14px 9px;border-bottom:1px solid #f1f5f9;">
+      <div style="font-size:13px;font-weight:700;color:#1e293b;line-height:1.3;margin-bottom:2px;">${loc.business_name || '—'}</div>
+      <div style="font-size:10.5px;color:#94a3b8;font-family:monospace;">${loc.store_code || '—'}</div>
+    </div>
+    <div style="padding:9px 14px;display:flex;flex-direction:column;gap:6px;">
+      <div style="display:flex;gap:5px;flex-wrap:wrap;">
+        <span style="display:inline-flex;align-items:center;padding:2px 7px;border-radius:9999px;font-size:10.5px;font-weight:600;background:${sc}18;color:${sc};border:1px solid ${sc}30;">${loc.status}</span>
+        <span style="display:inline-flex;align-items:center;padding:2px 7px;border-radius:9999px;font-size:10.5px;font-weight:600;background:${nc}18;color:${nc};border:1px solid ${nc}30;">${loc.network_type}</span>
+      </div>
+      ${loc.area ? `<div style="font-size:11px;color:#64748b;"><b style="color:#94a3b8;">Area:</b> ${loc.area}</div>` : ''}
+      ${loc.network_name ? `<div style="font-size:11px;color:#64748b;"><b style="color:#94a3b8;">Network:</b> ${loc.network_name}</div>` : ''}
+      ${loc.address ? `<div style="font-size:11px;color:#64748b;display:flex;gap:4px;align-items:flex-start;"><svg width='10' height='10' fill='none' stroke='#94a3b8' viewBox='0 0 24 24' stroke-width='2' style='flex-shrink:0;margin-top:1px;'><path d='M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z'/><path d='M15 11a3 3 0 11-6 0 3 3 0 016 0z'/></svg><span>${loc.address}</span></div>` : ''}
+      <div style="font-size:10px;color:#94a3b8;font-family:monospace;">${loc.latitude.toFixed(6)}, ${loc.longitude.toFixed(6)}</div>
+      ${mapsLink}
+      ${perfBtn}
+    </div>
+  </div>`;
+  }
+
+  /* ── Map state ── */
+  let map, clusterGroup, allLocs = [];
+  let currentMode = '{{ selected_mode }}' === 'network' ? 'network' : 'status';
+
+  function initMap() {
+    map = L.map('leaflet-map', { center: INDONESIA_CENTER, zoom: INDONESIA_ZOOM });
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap &copy; CARTO', subdomains: 'abcd', maxZoom: 19
+    }).addTo(map);
+
+    clusterGroup = L.markerClusterGroup({
+      showCoverageOnHover: false,
+      maxClusterRadius: 48,
+      iconCreateFunction(cluster) {
+        const n = cluster.getChildCount();
+        return L.divIcon({
+          html: `<div style="width:34px;height:34px;border-radius:50%;background:rgba(124,58,237,0.82);color:white;font-weight:700;font-size:11px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(124,58,237,0.35);border:2px solid rgba(255,255,255,0.75);">${n}</div>`,
+          iconSize: [34, 34], className: ''
+        });
+      }
+    });
+    map.addLayer(clusterGroup);
+  }
+
+  async function loadMapData() {
+    try {
+      const res = await fetch(API_URL);
+      const data = await res.json();
+      allLocs = data.locations;
+      document.getElementById('stat-displayed').textContent = data.stats.with_coords;
+      document.getElementById('stat-filtered').textContent = data.stats.total;
+      renderMarkers(allLocs);
+    } catch (e) {
+      console.error('Map data error:', e);
+    } finally {
+      const el = document.getElementById('map-loading');
+      if (el) el.style.display = 'none';
+    }
+  }
+
+  function renderMarkers(locs) {
+    clusterGroup.clearLayers();
+    locs.forEach(loc => {
+      const icon = makeIcon(loc, currentMode);
+      const marker = L.marker([loc.latitude, loc.longitude], { icon });
+      marker.bindPopup(buildPopup(loc), { maxWidth: 300, className: 'custom-popup' });
+      marker.bindTooltip(`<b>${loc.business_name || loc.store_code}</b> — ${loc.status}`,
+        { direction: 'top', offset: [0, -28] });
+      clusterGroup.addLayer(marker);
+    });
+    if (locs.length > 0 && clusterGroup.getBounds().isValid()) {
+      map.fitBounds(clusterGroup.getBounds(), { padding: [40, 40], maxZoom: 12 });
+    }
+  }
+
+  function applyFilters() {
+    let filtered;
+    if (currentMode === 'status') {
+      const active = ['Verified', 'Need Verification', 'Duplicate', 'Suspended'].filter(s => {
+        const ids = { 'Verified': 'cb-verified', 'Need Verification': 'cb-need-verif', 'Duplicate': 'cb-duplicate', 'Suspended': 'cb-suspended' };
+        const el = document.getElementById(ids[s]); return el ? el.checked : true;
+      });
+      filtered = allLocs.filter(l => active.includes(l.status));
+    } else {
+      const active = ['Cabang', 'Pos', 'Kios', 'Subkios', 'Lainnya'].filter(n => {
+        const ids = { 'Cabang': 'cb-cabang', 'Pos': 'cb-pos', 'Kios': 'cb-kios', 'Subkios': 'cb-subkios', 'Lainnya': 'cb-lainnya' };
+        const el = document.getElementById(ids[n]); return el ? el.checked : true;
+      });
+      filtered = allLocs.filter(l => active.includes(l.network_type));
+    }
+    renderMarkers(filtered);
+    document.getElementById('stat-displayed').textContent = filtered.length;
+    document.getElementById('stat-filtered').textContent = filtered.length;
+  }
+
+  function setMode(mode) {
+    currentMode = mode;
+    ['status', 'network'].forEach(m => {
+      const btn = document.getElementById('btn-mode-' + m);
+      if (btn) btn.classList.toggle('active', m === mode);
+    });
+    const ps = document.getElementById('panel-filter-status');
+    const pn = document.getElementById('panel-filter-network');
+    if (ps) ps.style.display = mode === 'status' ? 'block' : 'none';
+    if (pn) pn.style.display = mode === 'network' ? 'block' : 'none';
+    renderMarkers(allLocs);
+    applyFilters();
+  }
+
+  function openCoordModal() { const m = document.getElementById('coord-modal'); if (m) { m.style.display = 'flex'; document.body.style.overflow = 'hidden'; } }
+  function closeCoordModal() { const m = document.getElementById('coord-modal'); if (m) { m.style.display = 'none'; document.body.style.overflow = ''; } }
+
+  /* ─────────────────────────────────────────────────────────────────
+  PERFORMANCE PANEL CONTROLLER
+  ───────────────────────────────────────────────────────────────── */
+
+  const PERF_API_URL = '{% url "gbp:branch_performance_api" %}';
+
+  let perfCurrentLoc = null;   // loc object currently shown in panel
+  let perfFetchCache = {};      // cache: `${prefix}|${period}` → response data
+
+  // Month name mapping
+  const MONTH_NAMES = [
+    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+  ];
+
+  /* ── Init period selector year options ── */
+  function initPerfYearSelect() {
+    const sel = document.getElementById('perf-sel-year');
+    if (!sel) return;
+    const now = new Date();
+    const curYear = now.getFullYear();
+    for (let y = curYear + 1; y >= curYear - 4; y--) {
+      const opt = document.createElement('option');
+      opt.value = y;
+      opt.textContent = y;
+      if (y === curYear) opt.selected = true;
+      sel.appendChild(opt);
+    }
+    // Set default month to current
+    const mSel = document.getElementById('perf-sel-month');
+    if (mSel) mSel.value = now.getMonth() + 1;
+  }
+
+  /* ── Open performance panel for a Cabang location ── */
+  function openPerfPanel(loc) {
+    perfCurrentLoc = loc;
+    const panel = document.getElementById('perf-panel');
+    if (!panel) return;
+
+    // Set header info
+    const nameEl = document.getElementById('perf-branch-name');
+    const metaEl = document.getElementById('perf-branch-meta');
+    if (nameEl) nameEl.textContent = loc.business_name || 'Cabang';
+    if (metaEl) metaEl.textContent = `${loc.store_code || '—'}${loc.area ? ' · ' + loc.area : ''}`;
+
+    // Fill informasi tab
+    fillInfoTab(loc);
+
+    // Default to info tab
+    switchPerfTab('info');
+
+    // Open panel
+    panel.classList.add('open');
+  }
+
+  /* ── Close performance panel ── */
+  function closePerfPanel() {
+    const panel = document.getElementById('perf-panel');
+    if (panel) panel.classList.remove('open');
+    perfCurrentLoc = null;
+  }
+
+  /* ── Switch between Informasi / Performance tabs ── */
+  function switchPerfTab(tab) {
+    const infoTab = document.getElementById('perf-tab-info');
+    const perfTab = document.getElementById('perf-tab-perf');
+    const infoBody = document.getElementById('perf-tab-info-content');
+    const perfBody = document.getElementById('perf-tab-perf-content');
+    if (!infoTab || !perfTab || !infoBody || !perfBody) return;
+
+    if (tab === 'info') {
+      infoTab.classList.add('active'); perfTab.classList.remove('active');
+      infoBody.style.display = 'block'; perfBody.style.display = 'none';
+    } else {
+      perfTab.classList.add('active'); infoTab.classList.remove('active');
+      perfBody.style.display = 'block'; infoBody.style.display = 'none';
+
+      // Only load performance if Cabang
+      if (perfCurrentLoc && perfCurrentLoc.network_type === 'Cabang') {
+        loadPerfData();
+      } else {
+        showPerfState('not-cabang');
+      }
+    }
+  }
+
+  /* ── Fill Informasi tab with location details ── */
+  function fillInfoTab(loc) {
+    const sc = getStatusColor(loc.status);
+    const nc = getNetColor(loc.network_type);
+    const el = document.getElementById('perf-info-detail');
+    if (!el) return;
+    el.innerHTML = `
+    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:2px;">
+      <span style="display:inline-flex;align-items:center;padding:3px 8px;border-radius:9999px;font-size:11px;font-weight:600;background:${sc}18;color:${sc};border:1px solid ${sc}30;">${loc.status}</span>
+      <span style="display:inline-flex;align-items:center;padding:3px 8px;border-radius:9999px;font-size:11px;font-weight:600;background:${nc}18;color:${nc};border:1px solid ${nc}30;">${loc.network_type}</span>
+    </div>
+    ${loc.area ? `<div style="font-size:11.5px;color:#475569;"><span style="color:#94a3b8;font-weight:600;">Area:</span> ${loc.area}</div>` : ''}
+    ${loc.network_name ? `<div style="font-size:11.5px;color:#475569;"><span style="color:#94a3b8;font-weight:600;">Network:</span> ${loc.network_name}</div>` : ''}
+    ${loc.address ? `<div style="font-size:11.5px;color:#475569;display:flex;gap:5px;align-items:flex-start;"><svg width='11' height='11' fill='none' stroke='#94a3b8' viewBox='0 0 24 24' stroke-width='2' style='flex-shrink:0;margin-top:2px;'><path d='M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z'/><path d='M15 11a3 3 0 11-6 0 3 3 0 016 0z'/></svg><span>${loc.address}</span></div>` : ''}
+    <div style="font-size:10.5px;color:#94a3b8;font-family:monospace;">${loc.latitude.toFixed(6)}, ${loc.longitude.toFixed(6)}</div>
+    ${loc.maps_uri ? `<a href="${loc.maps_uri}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;color:#7c3aed;font-size:11.5px;font-weight:600;text-decoration:none;margin-top:2px;"><svg width='11' height='11' fill='none' stroke='currentColor' viewBox='0 0 24 24' stroke-width='2'><path d='M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14'/></svg>Lihat di Google Maps</a>` : ''}
+    ${loc.network_type === 'Cabang' ? `<button onclick="switchPerfTab('perf')" style="margin-top:6px;width:100%;padding:7px 11px;border-radius:8px;border:1.5px solid rgba(124,58,237,0.3);background:rgba(237,233,254,0.5);color:#5b21b6;font-size:11.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;justify-content:center;transition:all 0.15s;" onmouseenter="this.style.background='rgba(237,233,254,0.9)'" onmouseleave="this.style.background='rgba(237,233,254,0.5)'"><svg width='12' height='12' fill='none' stroke='currentColor' viewBox='0 0 24 24' stroke-width='2.2'><path stroke-linecap='round' stroke-linejoin='round' d='M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z'/></svg>Lihat Performance Report</button>` : ''}
+  `;
+  }
+
+  /* ── Period change handler ── */
+  function onPerfPeriodChange() {
+    if (perfCurrentLoc) loadPerfData();
+  }
+
+  /* ── Load performance data from API ── */
+  async function loadPerfData() {
+    if (!perfCurrentLoc) return;
+
+    const monthSel = document.getElementById('perf-sel-month');
+    const yearSel = document.getElementById('perf-sel-year');
+    const month = monthSel ? parseInt(monthSel.value) : new Date().getMonth() + 1;
+    const year = yearSel ? parseInt(yearSel.value) : new Date().getFullYear();
+
+    const cacheKey = `${perfCurrentLoc.store_code}|${year}-${String(month).padStart(2, '0')}`;
+    if (perfFetchCache[cacheKey]) {
+      renderPerfData(perfFetchCache[cacheKey]);
+      return;
+    }
+
+    showPerfState('loading');
+
+    try {
+      const url = `${PERF_API_URL}?store_code=${encodeURIComponent(perfCurrentLoc.store_code)}&month=${month}&year=${year}`;
+      const res = await fetch(url);
+      const data = await res.json();
+
+      if (!data.ok) {
+        showPerfState('error');
+        const errEl = document.getElementById('perf-error-msg');
+        if (errEl) errEl.textContent = data.error || 'Gagal memuat data.';
+        return;
+      }
+
+      // Cache the result
+      perfFetchCache[cacheKey] = data;
+      renderPerfData(data);
+    } catch (e) {
+      console.error('Perf API error:', e);
+      showPerfState('error');
+    }
+  }
+
+  /* ── Show/hide panel states ── */
+  function showPerfState(state) {
+    const states = ['loading', 'empty', 'error', 'not-cabang', 'cards'];
+    states.forEach(s => {
+      const id = s === 'cards' ? 'perf-cards' : `perf-${s.replace('-', '')}`;
+      const el = document.getElementById(s === 'cards' ? 'perf-cards' : `perf-${s.replace('-', '-')}`)
+        || document.getElementById(s === 'not-cabang' ? 'perf-not-cabang' : `perf-${s}`);
+      if (el) el.style.display = (s === state) ? (s === 'cards' ? 'grid' : 'flex') : 'none';
+    });
+  }
+
+  /* ────────────────────────────────────
+     FORMATTING UTILITIES
+  ──────────────────────────────────── */
+
+  function formatRupiah(val) {
+    if (val === null || val === undefined || isNaN(val)) return '—';
+    const abs = Math.abs(val);
+    const sign = val < 0 ? '-' : '';
+    if (abs >= 1e12) return `${sign}Rp ${(abs / 1e12).toFixed(2).replace('.', ',')}T`;
+    if (abs >= 1e9) return `${sign}Rp ${(abs / 1e9).toFixed(2).replace('.', ',')}B`;
+    if (abs >= 1e6) return `${sign}Rp ${(abs / 1e6).toFixed(2).replace('.', ',')}M`;
+    if (abs >= 1e3) return `${sign}Rp ${(abs / 1e3).toFixed(1).replace('.', ',')}K`;
+    return `${sign}Rp ${abs.toLocaleString('id-ID')}`;
+  }
+
+  function formatRupiahFull(val) {
+    if (val === null || val === undefined || isNaN(val)) return '—';
+    const sign = val < 0 ? '-' : '';
+    return `${sign}Rp ${Math.abs(val).toLocaleString('id-ID')}`;
+  }
+
+  function formatUnit(val) {
+    if (val === null || val === undefined || isNaN(val)) return '—';
+    return `${Math.round(val).toLocaleString('id-ID')} Unit`;
+  }
+
+  function formatPct(val) {
+    if (val === null || val === undefined || isNaN(val)) return '—';
+    return `${val.toFixed(2)}%`;
+  }
+
+  function safePercChange(curr, prev) {
+    if (curr === null || prev === null || prev === undefined || curr === undefined) return null;
+    if (isNaN(curr) || isNaN(prev)) return null;
+    const absPrev = Math.abs(prev);
+    if (absPrev === 0) return null;
+    return ((curr - prev) / absPrev) * 100;
+  }
+
+  /* ────────────────────────────────────
+     METRIC-SPECIFIC TREND INTERPRETATION
+  ──────────────────────────────────── */
+
+  /**
+   * Returns 'positive', 'negative', or 'neutral'
+   * based on the metric and the direction of change.
+   *
+   * Metrics where HIGHER is BETTER: nsa, osa, profit
+   * Metrics where LOWER is BETTER:  nl (lower losses = better)
+   * Metrics with context-dependent meaning: cd
+   */
+  function getTrendClass(diff, metric) {
+    if (diff === null || diff === undefined || isNaN(diff) || diff === 0) return 'neutral';
+    const higher_is_better = ['nsa', 'osa', 'profit'];
+    const lower_is_better = ['nl'];
+    // cd: lower delinquency (lower CD%) can mean worse or better depending on business rules.
+    // We default to: higher CD% = more of portfolio is cycling normally = neutral display.
+    // If you want directional: treat higher as better (lower delinquency backlog).
+    const cd_higher_is_better = true;
+
+    if (metric === 'cd') {
+      return cd_higher_is_better ? (diff > 0 ? 'positive' : 'negative') : 'neutral';
+    }
+    if (higher_is_better.includes(metric)) {
+      return diff > 0 ? 'positive' : 'negative';
+    }
+    if (lower_is_better.includes(metric)) {
+      // For losses: increase in NL = bad = negative trend
+      return diff > 0 ? 'negative' : 'positive';
+    }
+    return 'neutral';
+  }
+
+  function trendArrow(diff, metric) {
+    if (diff === null || diff === undefined || isNaN(diff)) return '—';
+    if (diff === 0) return '→ 0%';
+    const cls = getTrendClass(diff, metric);
+    const pct = safePercChange !== null ? '' : '';
+    const arrow = diff > 0 ? '↑' : '↓';
+    return `${arrow}`;
+  }
+
+  /* ────────────────────────────────────
+     RENDER PERFORMANCE DATA TO CARDS
+  ──────────────────────────────────── */
+
+  function renderPerfData(data) {
+    // Update compare label
+    const month = parseInt(document.getElementById('perf-sel-month').value);
+    const year = parseInt(document.getElementById('perf-sel-year').value);
+    const label = document.getElementById('perf-compare-label');
+    if (label) {
+      const curLabel = `${MONTH_NAMES[month - 1]} ${year}`;
+      const prevLabel = `${MONTH_NAMES[month - 1]} ${year - 1}`;
+      label.innerHTML = `<span style="font-weight:700;color:#5b21b6;">${curLabel}</span>
+      <span style="color:#94a3b8;"> vs </span>
+      <span style="font-weight:600;color:#94a3b8;">${prevLabel}</span>`;
+    }
+
+    // If no data at all
+    if (!data.has_current && !data.has_previous) {
+      showPerfState('empty');
+      return;
+    }
+
+    showPerfState('cards');
+
+    const cur = data.current || {};
+    const prev = data.previous || {};
+
+    function renderCard(id, currVal, prevVal, formatFn, metric) {
+      const currEl = document.getElementById(`mc-${id}-curr`);
+      const prevEl = document.getElementById(`mc-${id}-prev`);
+      const diffEl = document.getElementById(`mc-${id}-diff`);
+      if (!currEl) return;
+
+      const hasCurr = currVal !== null && currVal !== undefined && !isNaN(currVal);
+      const hasPrev = prevVal !== null && prevVal !== undefined && !isNaN(prevVal);
+
+      currEl.textContent = hasCurr ? formatFn(currVal) : '—';
+      prevEl.textContent = hasPrev ? `vs ${formatFn(prevVal)}` : 'vs —';
+
+      if (hasCurr && hasPrev) {
+        const diff = currVal - prevVal;
+        const pct = safePercChange(currVal, prevVal);
+        const cls = getTrendClass(diff, metric);
+        const arrow = diff > 0 ? '↑' : diff < 0 ? '↓' : '→';
+        const diffStr = formatFn(Math.abs(diff));
+        const pctStr = pct !== null ? ` (${pct > 0 ? '+' : ''}${pct.toFixed(1)}%)` : '';
+        diffEl.className = `perf-metric-diff trend-${cls}`;
+        diffEl.textContent = `${arrow} ${diff >= 0 ? '+' : '-'}${diffStr.replace(/^[-+]?Rp\s?/, 'Rp ')}${pctStr}`;
+        // Fix the diffStr for non-rupiah metrics
+        if (metric === 'osa') {
+          diffEl.textContent = `${arrow} ${diff > 0 ? '+' : ''}${Math.round(diff).toLocaleString('id-ID')} unit${pctStr}`;
+        } else if (metric === 'cd') {
+          diffEl.textContent = `${arrow} ${diff > 0 ? '+' : ''}${diff.toFixed(2)}%${pctStr}`;
+        } else {
+          // Rupiah diff
+          diffEl.textContent = `${arrow} ${diff > 0 ? '+' : ''}${formatRupiah(diff)}${pctStr}`;
+        }
+      } else if (hasCurr && !hasPrev) {
+        diffEl.className = 'perf-metric-diff trend-neutral';
+        diffEl.textContent = 'Tidak ada data tahun lalu';
+      } else {
+        diffEl.className = 'perf-metric-diff trend-neutral';
+        diffEl.textContent = '—';
+      }
+    }
+
+    renderCard('nsa', cur.nsa ?? null, prev.nsa ?? null, formatRupiah, 'nsa');
+    renderCard('osa', cur.osa ?? null, prev.osa ?? null, formatUnit, 'osa');
+    renderCard('cd', cur.cd ?? null, prev.cd ?? null, formatPct, 'cd');
+    renderCard('profit', cur.profit ?? null, prev.profit ?? null, formatRupiah, 'profit');
+    renderCard('nl', cur.nl ?? null, prev.nl ?? null, formatRupiah, 'nl');
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    initMap();
+    loadMapData();
+    setMode(currentMode);
+    initPerfYearSelect();
+  });
+</script>
+{% endif %}
+
+{% if selected_mode == "coverage" %}
+<script>
+  function filterCoverageTable(networkType) {
+    const table = document.getElementById('coverage-detail-table');
+    if (!table) return;
+    table.querySelectorAll('tbody tr[data-network-type]').forEach(row => {
+      row.style.display = (networkType === 'all' || row.dataset.networkType === networkType) ? '' : 'none';
+    });
+    document.querySelectorAll('.cov-filter-tab').forEach(tab => {
+      tab.classList.toggle('active', tab.dataset.filter === networkType);
+    });
+  }
+</script>
+{% endif %}
+
+{% endif %}
+{% endblock %}

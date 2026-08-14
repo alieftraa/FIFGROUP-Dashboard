@@ -1,0 +1,236 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="GBP Monitor — Dashboard monitoring status verifikasi Google Business Profile FIFGROUP">
+  <title>{% block title %}GBP Monitor{% endblock %} — FIFGROUP</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- ApexCharts -->
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+  <!-- Alpine.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <!-- HTMX -->
+  <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+  <!-- Tailwind CSS output -->
+  <link rel="stylesheet" href="{% static 'gbp/css/output.css' %}?v={{ request.resolver_match.url_name|default:'0' }}-{% now 'U' %}">
+
+  <style>
+    /* Fallback styles */
+    body { font-family: 'Inter', system-ui, sans-serif; }
+    /* Smooth scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #EFF6FF; }
+    ::-webkit-scrollbar-thumb { background: rgba(15, 60, 140, 0.3); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(15, 60, 140, 0.6); }
+    /* HTMX Indicator Fade */
+    .htmx-indicator{ opacity:0; transition: opacity 200ms ease-in;}
+    .htmx-request .htmx-indicator{ opacity:1 }
+    .htmx-request.htmx-indicator{ opacity:1 }
+  </style>
+
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="h-full bg-[#EFF6FF] text-[#0F172A]" hx-boost="true" x-data="{ sidebarOpen: false, sidebarCollapsed: false, isLargeScreen: window.innerWidth >= 1024 }" x-init="$nextTick(() => { window.addEventListener('resize', () => { isLargeScreen = window.innerWidth >= 1024; }) })">
+
+  <div class="flex h-screen overflow-hidden">
+
+    <!-- ── Sidebar ─────────────────────────────────────── -->
+    <aside id="sidebar"
+           :class="[sidebarOpen ? 'translate-x-0' : '-translate-x-full', sidebarCollapsed ? 'lg:w-16' : 'lg:w-64']"
+           class="flex-shrink-0 bg-gradient-to-b from-[#0A235C] via-[#0F3C8C] to-[#0D3175] flex flex-col h-full fixed left-0 top-0 z-40 transition-all duration-300 lg:translate-x-0 shadow-xl w-64">
+
+      <!-- Logo -->
+      <div class="flex items-center justify-center border-b border-white/10 transition-all duration-300 relative"
+           :class="sidebarCollapsed ? 'px-2 py-5' : 'px-6 py-6'">
+        <img src="{% static 'gbp/img/fifgroup-logo.png' %}?v=99" alt="FIFGROUP"
+             class="object-contain drop-shadow-lg transition-all duration-300 hover:scale-105"
+             :class="sidebarCollapsed ? 'h-8 w-8' : 'h-12 w-auto'">
+      </div>
+
+      <!-- Navigation -->
+      <nav class="flex-1 py-6 space-y-1 overflow-y-auto transition-all duration-300" :class="sidebarCollapsed ? 'px-2' : 'pl-6 pr-0'">
+
+        <a href="{% url 'gbp:overview' %}{% if request.GET.run_id %}?run_id={{ request.GET.run_id }}{% endif %}"
+           class="flex items-center gap-4 py-3 text-base font-semibold transition-all duration-300 relative group"
+           :class="sidebarCollapsed ? 'px-3 rounded-xl justify-center' : 'px-4 rounded-l-full'"
+           :title="sidebarCollapsed ? 'Report' : ''"
+           style="{% if request.resolver_match.url_name == 'overview' %}color: #0F3C8C; background: #EFF6FF;{% else %}color: #bfdbfe;{% endif %}">
+          {% if request.resolver_match.url_name == 'overview' %}
+            <div class="absolute -top-4 right-0 w-4 h-4 bg-transparent shadow-[4px_4px_0_4px_#EFF6FF] rounded-br-full" x-show="!sidebarCollapsed"></div>
+            <div class="absolute -bottom-4 right-0 w-4 h-4 bg-transparent shadow-[4px_-4px_0_4px_#EFF6FF] rounded-tr-full" x-show="!sidebarCollapsed"></div>
+            <div class="absolute left-0 w-1.5 h-8 bg-accent rounded-r-full" x-show="!sidebarCollapsed"></div>
+          {% endif %}
+          <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+          </svg>
+          <span x-show="!sidebarCollapsed" x-transition.opacity class="whitespace-nowrap">Report</span>
+        </a>
+
+        <a href="{% url 'gbp:data_table' %}{% if request.GET.run_id %}?run_id={{ request.GET.run_id }}{% endif %}"
+           class="flex items-center gap-4 py-3 text-base font-semibold transition-all duration-300 relative group"
+           :class="sidebarCollapsed ? 'px-3 rounded-xl justify-center' : 'px-4 rounded-l-full'"
+           :title="sidebarCollapsed ? 'Store Data' : ''"
+           style="{% if request.resolver_match.url_name == 'data_table' %}color: #0F3C8C; background: #EFF6FF;{% else %}color: #bfdbfe;{% endif %}">
+          {% if request.resolver_match.url_name == 'data_table' %}
+            <div class="absolute -top-4 right-0 w-4 h-4 bg-transparent shadow-[4px_4px_0_4px_#EFF6FF] rounded-br-full" x-show="!sidebarCollapsed"></div>
+            <div class="absolute -bottom-4 right-0 w-4 h-4 bg-transparent shadow-[4px_-4px_0_4px_#EFF6FF] rounded-tr-full" x-show="!sidebarCollapsed"></div>
+            <div class="absolute left-0 w-1.5 h-8 bg-accent rounded-r-full" x-show="!sidebarCollapsed"></div>
+          {% endif %}
+          <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M3 14h18M10 6h11M10 18h11M3 6h4M3 18h4"/>
+          </svg>
+          <span x-show="!sidebarCollapsed" x-transition.opacity class="whitespace-nowrap">Store Data</span>
+        </a>
+
+        <a href="{% url 'gbp:map_view' %}{% if request.GET.run_id %}?run_id={{ request.GET.run_id }}{% endif %}"
+           class="flex items-center gap-4 py-3 text-base font-semibold transition-all duration-300 relative group"
+           :class="sidebarCollapsed ? 'px-3 rounded-xl justify-center' : 'px-4 rounded-l-full'"
+           :title="sidebarCollapsed ? 'Map View' : ''"
+           style="{% if request.resolver_match.url_name == 'map_view' %}color: #0F3C8C; background: #EFF6FF;{% else %}color: #bfdbfe;{% endif %}">
+          {% if request.resolver_match.url_name == 'map_view' %}
+            <div class="absolute -top-4 right-0 w-4 h-4 bg-transparent shadow-[4px_4px_0_4px_#EFF6FF] rounded-br-full" x-show="!sidebarCollapsed"></div>
+            <div class="absolute -bottom-4 right-0 w-4 h-4 bg-transparent shadow-[4px_-4px_0_4px_#EFF6FF] rounded-tr-full" x-show="!sidebarCollapsed"></div>
+            <div class="absolute left-0 w-1.5 h-8 bg-accent rounded-r-full" x-show="!sidebarCollapsed"></div>
+          {% endif %}
+          <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+          </svg>
+          <span x-show="!sidebarCollapsed" x-transition.opacity class="whitespace-nowrap">Map View</span>
+        </a>
+
+        <a href="{% url 'gbp:update_status' %}"
+           class="flex items-center gap-4 py-3 text-base font-semibold transition-all duration-300 relative group"
+           :class="sidebarCollapsed ? 'px-3 rounded-xl justify-center' : 'px-4 rounded-l-full'"
+           :title="sidebarCollapsed ? 'Update Status' : ''"
+           style="{% if request.resolver_match.url_name == 'update_status' %}color: #0F3C8C; background: #EFF6FF;{% else %}color: #bfdbfe;{% endif %}">
+          {% if request.resolver_match.url_name == 'update_status' %}
+            <div class="absolute -top-4 right-0 w-4 h-4 bg-transparent shadow-[4px_4px_0_4px_#EFF6FF] rounded-br-full" x-show="!sidebarCollapsed"></div>
+            <div class="absolute -bottom-4 right-0 w-4 h-4 bg-transparent shadow-[4px_-4px_0_4px_#EFF6FF] rounded-tr-full" x-show="!sidebarCollapsed"></div>
+            <div class="absolute left-0 w-1.5 h-8 bg-accent rounded-r-full" x-show="!sidebarCollapsed"></div>
+          {% endif %}
+          <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>
+          <span x-show="!sidebarCollapsed" x-transition.opacity class="whitespace-nowrap">Update Status</span>
+        </a>
+
+        <a href="{% url 'gbp:download_report' %}"
+           class="flex items-center gap-4 py-3 text-base font-semibold transition-all duration-300 relative group"
+           :class="sidebarCollapsed ? 'px-3 rounded-xl justify-center' : 'px-4 rounded-l-full'"
+           :title="sidebarCollapsed ? 'Download' : ''"
+           style="{% if request.resolver_match.url_name == 'download_report' %}color: #0F3C8C; background: #EFF6FF;{% else %}color: #bfdbfe;{% endif %}">
+          {% if request.resolver_match.url_name == 'download_report' %}
+            <div class="absolute -top-4 right-0 w-4 h-4 bg-transparent shadow-[4px_4px_0_4px_#EFF6FF] rounded-br-full" x-show="!sidebarCollapsed"></div>
+            <div class="absolute -bottom-4 right-0 w-4 h-4 bg-transparent shadow-[4px_-4px_0_4px_#EFF6FF] rounded-tr-full" x-show="!sidebarCollapsed"></div>
+            <div class="absolute left-0 w-1.5 h-8 bg-accent rounded-r-full" x-show="!sidebarCollapsed"></div>
+          {% endif %}
+          <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+          </svg>
+          <span x-show="!sidebarCollapsed" x-transition.opacity class="whitespace-nowrap">Download</span>
+        </a>
+      </nav>
+
+      <!-- Footer Actions -->
+      <div class="py-6 pb-8 space-y-3 transition-all duration-300" :class="sidebarCollapsed ? 'px-2' : 'px-6'">
+        <form method="POST" action="{% url 'gbp:trigger_fetch' %}" id="fetch-form" x-data="{ isFetching: false }" @submit="isFetching = true">
+          {% csrf_token %}
+          <button type="submit"
+                  id="btn-fetch-now"
+                  :disabled="isFetching"
+                  :title="sidebarCollapsed ? 'Fetch Sekarang' : ''"
+                  class="w-full flex items-center justify-center gap-2 py-3 rounded-full text-sm font-semibold text-primary bg-accent hover:bg-teal-400 shadow-[0_0_15px_rgba(0,174,239,0.4)] transition-all duration-200 disabled:opacity-75 disabled:cursor-wait"
+                  :class="sidebarCollapsed ? 'px-0' : 'px-4'">
+            <svg x-show="!isFetching" class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+            <svg x-show="isFetching" style="display:none;" class="animate-spin h-4 w-4 text-primary flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span x-show="!sidebarCollapsed" x-transition.opacity x-text="isFetching ? 'Loading...' : 'Fetch Sekarang'" class="whitespace-nowrap"></span>
+          </button>
+        </form>
+        <a href="/admin/"
+           class="w-full flex items-center justify-center gap-2 py-2.5 rounded-full text-sm font-semibold text-blue-200 border border-blue-400/50 hover:bg-white/5 hover:text-white transition-all"
+           :class="sidebarCollapsed ? 'px-0' : 'px-4'"
+           :title="sidebarCollapsed ? 'Admin' : ''"
+           hx-boost="false">
+          <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+          <span x-show="!sidebarCollapsed" x-transition.opacity class="whitespace-nowrap">Admin</span>
+        </a>
+      </div>
+    </aside>
+
+    <!-- ── Main Content ─────────────────────────────────── -->
+    <main id="main-content" class="flex-1 flex flex-col min-h-screen overflow-auto relative transition-all duration-300" style="margin-left:16rem" :style="isLargeScreen ? { marginLeft: sidebarCollapsed ? '4rem' : '16rem' } : { marginLeft: '0' }">
+      <!-- Loading indicator for HTMX page transitions -->
+      <div class="htmx-indicator absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-accent to-primary z-50"></div>
+
+      <!-- Topbar -->
+      <header class="sticky top-0 z-30 bg-white px-8 py-5 flex items-center gap-4 border-b border-blue-50 shadow-sm">
+        <!-- Sidebar toggle (Desktop & Mobile) -->
+        <button id="sidebar-toggle"
+                @click="isLargeScreen ? (sidebarCollapsed = !sidebarCollapsed) : (sidebarOpen = !sidebarOpen)"
+                class="p-2 -ml-2 mr-1 rounded-xl text-[#8C8AA0] hover:bg-[#EFF6FF] transition-colors"
+                aria-label="Toggle sidebar">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+        {% block breadcrumb %}{% endblock %}
+      </header>
+
+      <!-- Django Messages -->
+      {% if messages %}
+      <div class="px-6 pt-4 space-y-2 animate-fade-in" id="django-messages">
+        {% for message in messages %}
+        <div class="flex items-start gap-3 px-4 py-3 rounded-xl text-sm font-medium border
+                    {% if message.tags == 'success' %}bg-emerald-50 text-emerald-800 border-emerald-200
+                    {% elif message.tags == 'error' %}bg-red-50 text-red-800 border-red-200
+                    {% elif message.tags == 'warning' %}bg-amber-50 text-amber-800 border-amber-200
+                    {% else %}bg-blue-50 text-blue-800 border-blue-200{% endif %}"
+             role="alert"
+             x-data="{ show: true }" x-show="show" x-transition>
+          <span class="flex-1">{{ message }}</span>
+          <button @click="show = false"
+                  class="flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity text-lg leading-none">×</button>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- Page Content -->
+      <div class="flex-1 p-6 animate-fade-in" id="page-content">
+        {% block content %}{% endblock %}
+      </div>
+    </main>
+  </div>
+
+  <!-- Mobile overlay -->
+  <div id="sidebar-overlay"
+       x-show="sidebarOpen"
+       x-transition.opacity
+       @click="sidebarOpen = false"
+       style="display: none;"
+       class="fixed inset-0 bg-[#0F172A]/40 backdrop-blur-sm z-30 lg:hidden"></div>
+
+  <!-- JS -->
+  <script src="{% static 'gbp/js/main.js' %}"></script>
+  {% block extra_scripts %}{% endblock %}
+
+</body>
+</html>

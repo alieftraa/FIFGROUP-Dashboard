@@ -1,0 +1,140 @@
+{% extends "gbp/base.html" %}
+{% block title %}Detail Lokasi{% endblock %}
+
+{% block breadcrumb %}
+<span class="text-slate-500">Dashboard</span>
+<span class="text-slate-300 mx-1">/</span>
+<a href="{% url 'gbp:data_table' %}{% if sel_run_id %}?run_id={{ sel_run_id }}{% endif %}"
+  class="text-slate-500 hover:text-[#E20820] transition-colors">Data Table</a>
+<span class="text-slate-300 mx-1">/</span>
+<span class="text-slate-700 font-medium">Detail Lokasi</span>
+{% endblock %}
+
+{% block content %}
+<div class="mb-5 flex items-center gap-3">
+  <a href="{% url 'gbp:data_table' %}{% if sel_run_id %}?run_id={{ sel_run_id }}{% endif %}"
+    class="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 transition-colors">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+    </svg>
+    Kembali ke Data Table
+  </a>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+  <!-- Main Info -->
+  <div class="lg:col-span-2 space-y-5">
+
+    <!-- Header Card -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-card p-6">
+      <div class="flex items-start justify-between mb-4">
+        <div>
+          <h1 class="text-xl font-bold text-slate-900">{{ snapshot.business_name|default:"Nama tidak tersedia" }}</h1>
+          <p class="text-sm text-slate-500 mt-0.5 font-mono">{{ snapshot.store_code|default:"—" }}</p>
+        </div>
+        {% with s=snapshot.status %}
+        <span class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold
+          {% if s == 'Verified' %}bg-emerald-100 text-emerald-800
+          {% elif s == 'Duplicate' %}bg-amber-100 text-amber-800
+          {% elif s == 'Suspended' %}bg-red-100 text-red-800
+          {% else %}bg-slate-100 text-slate-600{% endif %}">
+          {{ s }}
+        </span>
+        {% endwith %}
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Location ID</div>
+          <div class="text-sm text-slate-700 font-mono break-all">{{ snapshot.location_name|default:"—" }}</div>
+        </div>
+        <div>
+          <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Account Name</div>
+          <div class="text-sm text-slate-700">{{ snapshot.account_name|default:"—" }}</div>
+        </div>
+        <div class="sm:col-span-2">
+          <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Alamat</div>
+          <div class="text-sm text-slate-700">{{ snapshot.address|default:"Alamat tidak tersedia" }}</div>
+        </div>
+        <div>
+          <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Fetched At</div>
+          <div class="text-sm text-slate-700 font-mono">{{ snapshot.fetched_at|default:"—" }}</div>
+        </div>
+        <div>
+          <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Run</div>
+          <div class="text-sm text-slate-700">
+            <span class="font-mono bg-slate-100 px-2 py-0.5 rounded text-xs">#{{ snapshot.run_id }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Koordinat -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-card p-6">
+      <h2 class="text-sm font-semibold text-slate-800 mb-4">Koordinat</h2>
+      <div class="grid grid-cols-3 gap-4">
+        <div>
+          <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Latitude</div>
+          <div class="text-base font-mono text-slate-800">
+            {% if snapshot.latitude %}{{ snapshot.latitude|floatformat:7 }}{% else %}—{% endif %}
+          </div>
+        </div>
+        <div>
+          <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Longitude</div>
+          <div class="text-base font-mono text-slate-800">
+            {% if snapshot.longitude %}{{ snapshot.longitude|floatformat:7 }}{% else %}—{% endif %}
+          </div>
+        </div>
+        <div>
+          <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Coord Status</div>
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+            {% if snapshot.coord_status == 'OK' %}bg-emerald-100 text-emerald-800
+            {% else %}bg-amber-100 text-amber-800{% endif %}">
+            {{ snapshot.coord_status|default:"—" }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar Info -->
+  <div class="space-y-4">
+
+    <!-- Flags -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-card p-5">
+      <h2 class="text-sm font-semibold text-slate-800 mb-4">Flags</h2>
+      <div class="space-y-3">
+        {% include "gbp/components/flag_row.html" with label="Has Voice of Merchant" value=snapshot.has_vom %}
+        {% include "gbp/components/flag_row.html" with label="Is Duplicate" value=snapshot.is_duplicate danger=True %}
+        {% include "gbp/components/flag_row.html" with label="Is Suspended" value=snapshot.is_suspended danger=True %}
+        {% include "gbp/components/flag_row.html" with label="Has Pending Edits" value=snapshot.has_pending_edits %}
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-card p-5">
+      <h2 class="text-sm font-semibold text-slate-800 mb-3">Aksi</h2>
+      <div class="space-y-2">
+        {% if snapshot.maps_uri %}
+        <a href="{{ snapshot.maps_uri }}" target="_blank" rel="noopener noreferrer" id="btn-open-maps" class="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl text-sm font-medium
+                  text-white transition-all hover:opacity-90" style="background:#E20820">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          </svg>
+          Buka Google Maps
+        </a>
+        {% endif %}
+        <a href="{% url 'gbp:data_table' %}{% if sel_run_id %}?run_id={{ sel_run_id }}{% endif %}" class="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl text-sm font-medium
+                  text-slate-600 border border-gray-200 hover:bg-gray-50 transition-all">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Kembali ke Tabel
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,124 @@
+{% extends "gbp/base.html" %}
+{% block title %}Download Report{% endblock %}
+
+{% block breadcrumb %}
+<span class="text-[#8C8AA0] text-sm">Dashboard</span>
+<span class="text-[#8C8AA0] mx-2 text-sm">/</span>
+<span class="text-[#0F172A] font-medium text-sm">Download Report</span>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-6">
+
+  <!-- Header -->
+  <div>
+    <h1 class="text-2xl font-display font-bold text-[#0F172A] tracking-tight">Download Report</h1>
+    <p class="text-sm text-[#8C8AA0] mt-1">Export data rekonsiliasi verifikasi dalam format CSV atau Excel</p>
+  </div>
+
+  <!-- ── Reconciliation History Download ──────────────────────── -->
+  <div class="dash-card">
+    <div class="flex items-center justify-between mb-5">
+      <div>
+        <h2 class="text-base font-display font-bold text-primary">Hasil Rekonsiliasi (Status Lama → Baru)</h2>
+        <p class="text-xs text-[#8C8AA0] mt-0.5">Berisi: Nama Network, Store Code, Status Lama, Status Baru, Latlong</p>
+      </div>
+    </div>
+
+    {% if recon_jobs %}
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-[#EFF6FF]">
+            <th class="text-left py-3 px-3 text-[10px] font-semibold text-[#8C8AA0] uppercase tracking-wider">Tanggal</th>
+            <th class="text-left py-3 px-3 text-[10px] font-semibold text-[#8C8AA0] uppercase tracking-wider">Sumber</th>
+            <th class="text-center py-3 px-3 text-[10px] font-semibold text-[#8C8AA0] uppercase tracking-wider">Total</th>
+            <th class="text-center py-3 px-3 text-[10px] font-semibold text-[#8C8AA0] uppercase tracking-wider">Berubah</th>
+            <th class="text-center py-3 px-3 text-[10px] font-semibold text-[#8C8AA0] uppercase tracking-wider">Cocok</th>
+            <th class="text-right py-3 px-3 text-[10px] font-semibold text-[#8C8AA0] uppercase tracking-wider">Aksi</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-[#EFF6FF]">
+          {% for job in recon_jobs %}
+          <tr class="hover:bg-[rgba(15,60,140,0.04)] transition-colors">
+            <td class="py-3.5 px-3 text-[#0F172A] font-medium text-sm">
+              {{ job.created_at|date:"d M Y H:i" }}
+            </td>
+            <td class="py-3.5 px-3 text-[#8C8AA0] text-xs max-w-[200px] truncate">
+              {{ job.source_label|default:"—" }}
+            </td>
+            <td class="py-3.5 px-3 text-center">
+              <span class="font-semibold text-[#0F172A] font-display tabular-nums">{{ job.total_master|default:0 }}</span>
+            </td>
+            <td class="py-3.5 px-3 text-center">
+              {% if job.updated_count > 0 %}
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700">{{ job.updated_count }}</span>
+              {% else %}
+              <span class="text-[#8C8AA0] text-xs">0</span>
+              {% endif %}
+            </td>
+            <td class="py-3.5 px-3 text-center">
+              <span class="text-[#8C8AA0] text-sm tabular-nums">{{ job.matched_count|default:0 }}</span>
+            </td>
+            <td class="py-3.5 px-3 text-right">
+              <a href="{% url 'gbp:download_recon_detail' job.id %}"
+                 class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-blue-700 transition-all hover:-translate-y-px">
+               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                 <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+               </svg>
+               Download CSV
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="flex flex-col items-center justify-center py-16 text-center">
+      <div class="w-14 h-14 rounded-2xl bg-[#EFF6FF] flex items-center justify-center mb-4">
+        <svg class="w-7 h-7 text-[#8C8AA0]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+      </div>
+      <p class="text-[#0F172A] text-sm font-semibold">Belum Ada Riwayat Rekonsiliasi</p>
+      <p class="text-[#8C8AA0] text-xs mt-1">Jalankan rekonsiliasi di menu <strong>Update Status</strong> terlebih dahulu.</p>
+      <a href="{% url 'gbp:update_status' %}" class="btn-primary mt-5">
+        Ke Update Status
+      </a>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ── Snapshot Export ──────────────────────────────────────── -->
+  <div class="dash-card">
+    <div class="mb-5">
+      <h2 class="text-base font-display font-bold text-primary">Export Snapshot Data Terkini</h2>
+      <p class="text-xs text-[#8C8AA0] mt-0.5">Export data lokasi dari hasil fetch terakhir (termasuk latlong dan status saat ini)</p>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-3">
+      <a href="{% url 'gbp:export_csv' %}{% if sel_run_id %}?run_id={{ sel_run_id }}{% endif %}"
+         class="btn-teal">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+        </svg>
+        Export CSV
+      </a>
+      <a href="{% url 'gbp:export_excel' %}{% if sel_run_id %}?run_id={{ sel_run_id }}{% endif %}"
+         class="btn-primary">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        Export Excel
+      </a>
+      {% if sel_run %}
+      <span class="text-xs text-[#8C8AA0]">
+        Run: {{ sel_run.run_date }} ({{ sel_run.total }} lokasi)
+      </span>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,13 @@
+# Core — GBP API
+google-auth==2.29.0
+google-auth-oauthlib==1.2.0
+google-auth-httplib2==0.2.0
+requests==2.31.0
+certifi
+ 
+# Dashboard
+streamlit==1.53.0
+streamlit-folium==0.20.0
+folium==0.16.0
+pandas==2.3.0
+openpyxl==3.1.4

@@ -1,0 +1,175 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Custom Layer Components ─────────────────────────────────── */
+@layer components {
+
+  /* ── Dashboard Card ─────────────────────────────────────────── */
+  .dash-card {
+    @apply backdrop-blur-2xl rounded-3xl p-6 flex flex-col relative overflow-hidden z-0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.3) 100%);
+    box-shadow: 0 8px 32px 0 rgba(15, 60, 140, 0.15), inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+  }
+
+  .dash-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at center, rgba(15, 60, 140, 0.15) 0%, rgba(0, 174, 239, 0.08) 40%, transparent 60%);
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  /* ── Progress Bars ───────────────────────────────────────────── */
+  .progress-teal {
+    background: linear-gradient(90deg, #0F3C8C, #00AEEF);
+  }
+
+  .progress-pink {
+    background: linear-gradient(90deg, #D4537E, #f97316);
+  }
+
+  /* ── Status Badges (GBP status) ──────────────────────────────── */
+  .badge-verified {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold;
+    background: #ECFDF5;
+    color: #15803D;
+  }
+
+  .badge-verified::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+    background: #22C55E;
+    flex-shrink: 0;
+  }
+
+  .badge-duplicate {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold;
+    background: #FFF7ED;
+    color: #9A3412;
+  }
+
+  .badge-duplicate::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+    background: #F97316;
+    flex-shrink: 0;
+  }
+
+  .badge-suspended {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold;
+    background: #FEF2F2;
+    color: #B91C1C;
+  }
+
+  .badge-suspended::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+    background: #EF4444;
+    flex-shrink: 0;
+  }
+
+  .badge-unverified {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold;
+    background: #EFF6FF;
+    color: #8C8AA0;
+  }
+
+  .badge-unverified::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+    background: #8C8AA0;
+    flex-shrink: 0;
+  }
+
+  .badge-verification-required {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold;
+    background: #EEF6FF;
+    color: #1D4ED8;
+  }
+
+  /* ── Match Status Badges (reconciliation) ────────────────────── */
+  .match-matched {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700;
+  }
+
+  .match-updated {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700;
+  }
+
+  .match-not-found {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-[#EFF6FF] text-[#8C8AA0];
+  }
+
+  .match-invalid {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-50 text-red-700;
+  }
+
+  .match-manual-review {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700;
+  }
+
+  .match-unchanged {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-500;
+  }
+
+  .match-error {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800;
+  }
+
+  /* ── Table card wrapper ──────────────────────────────────────── */
+  .table-card {
+    @apply bg-white rounded-2xl overflow-hidden;
+    box-shadow: 0 2px 12px rgba(15, 60, 140, 0.07), 0 1px 3px rgba(15, 60, 140, 0.04);
+    border: 1px solid rgba(15, 60, 140, 0.08);
+  }
+
+  /* ── Form card ───────────────────────────────────────────────── */
+  .form-card {
+    @apply bg-white rounded-2xl p-6;
+    box-shadow: 0 2px 12px rgba(15, 60, 140, 0.07);
+    border: 1px solid rgba(15, 60, 140, 0.08);
+  }
+
+  /* ── Themed button variants ──────────────────────────────────── */
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-all duration-200;
+    background: #0F3C8C;
+    box-shadow: 0 2px 8px rgba(15, 60, 140, 0.3);
+  }
+
+  .btn-primary:hover {
+    background: #1e40af;
+    box-shadow: 0 4px 16px rgba(15, 60, 140, 0.4);
+    @apply -translate-y-px;
+  }
+
+  .btn-teal {
+    @apply inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-all duration-200;
+    background: #00AEEF;
+    box-shadow: 0 2px 8px rgba(0, 174, 239, 0.3);
+  }
+
+  .btn-teal:hover {
+    background: #0ea5e9;
+    box-shadow: 0 4px 16px rgba(0, 174, 239, 0.4);
+    @apply -translate-y-px;
+  }
+}
