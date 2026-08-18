@@ -163,7 +163,7 @@ def _request_with_retry(
     headers: dict,
     params: dict | None = None,
     context: str = "",
-    max_attempts: int = 4,
+    max_attempts: int = 3,
 ) -> req_lib.Response:
     """
     Lakukan GET request ke Google API dengan bounded exponential backoff.
@@ -171,32 +171,33 @@ def _request_with_retry(
     Retry hanya untuk 429 (rate limit) dan 503 (service unavailable).
     Untuk error lain (401, 403, 404, 5xx selain 503) langsung raise.
 
-    Backoff strategy:
+    Backoff strategy untuk 429 (Requests per minute limit):
       Attempt 1: langsung
-      Attempt 2: tunggu Retry-After (jika ada) atau 2 detik + jitter
-      Attempt 3: tunggu 2x lebih lama
-      Attempt 4: tunggu 2x lebih lama lagi → jika masih gagal, raise
+      Attempt 2: tunggu Retry-After (jika ada) atau 15 detik + jitter
+      Attempt 3: tunggu Retry-After (jika ada) atau 35 detik + jitter
 
     Args:
         url: URL endpoint Google API
         headers: Authorization headers
         params: Query params opsional
         context: Nama konteks untuk logging (misal 'get_accounts')
-        max_attempts: Jumlah maksimal percobaan (default: 4)
+        max_attempts: Jumlah maksimal percobaan (default: 3)
     """
     import time
     import random
+    from datetime import datetime
 
     RETRYABLE = {429, 503}
-    base_wait = 2.0  # detik
-
     last_exc = None
+
     for attempt in range(1, max_attempts + 1):
-        log.info(f"[GBP API] [{context}] Request attempt {attempt}/{max_attempts}")
+        ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        log.info(f"[GBP API] [{context}] Request attempt #{attempt}/{max_attempts} | Endpoint: {url} | Timestamp: {ts}")
         log.debug(f"[GBP API] [{context}] GET {url} params={list((params or {}).keys())}")
 
         try:
-            resp = req_lib.get(url, headers=headers, params=params, verify=certifi.where())
+            resp = req_lib.get(url, headers=headers, params=params, verify=certifi.where(), timeout=60)
+            log.info(f"[GBP API] [{context}] Response status: {resp.status_code}")
             resp.raise_for_status()
             return resp
 
@@ -214,20 +215,24 @@ def _request_with_retry(
 
             if retry_after:
                 try:
-                    wait = float(retry_after)
+                    wait = float(retry_after) + random.uniform(0.5, 2.0)
                     log.info(
                         f"[GBP API] [{context}] Rate limited ({status_code}). "
                         f"Retry-After dari Google: {wait:.1f} detik. "
                         f"Attempt {attempt+1}/{max_attempts} dalam {wait:.1f}s..."
                     )
                 except (ValueError, TypeError):
-                    wait = base_wait * (2 ** (attempt - 1))
+                    wait = 15.0 * (2 ** (attempt - 1)) + random.uniform(1.0, 3.0)
             else:
-                # Exponential backoff + jitter
-                wait = base_wait * (2 ** (attempt - 1)) + random.uniform(0.5, 1.5)
+                # Exponential backoff disesuaikan untuk rate limit per-menit
+                if status_code == 429:
+                    wait = (15.0 * attempt) + random.uniform(1.0, 4.0)
+                else:
+                    wait = (2.0 * (2 ** (attempt - 1))) + random.uniform(0.5, 1.5)
+
                 log.info(
                     f"[GBP API] [{context}] Rate limited ({status_code}). "
-                    f"Retrying in {wait:.1f} seconds... "
+                    f"Retrying in {wait:.1f} seconds to allow quota window reset... "
                     f"(attempt {attempt+1}/{max_attempts})"
                 )
 
@@ -393,28 +398,92 @@ def make_headers(creds: Credentials) -> dict:
     }
 
 
+# ── Cache & Concurrency Control untuk Accounts ─────────────────────────
+_ACCOUNTS_CACHE: list[dict] | None = None
+_ACCOUNTS_CACHE_TIME: float = 0
+_ACCOUNTS_CACHE_TTL: float = 86400.0  # 24 jam dalam detik
+_FETCH_LOCK = None
+
+
+def _get_fetch_lock():
+    global _FETCH_LOCK
+    if _FETCH_LOCK is None:
+        import threading
+        _FETCH_LOCK = threading.Lock()
+    return _FETCH_LOCK
+
+
+def _get_accounts_cache_path() -> Path:
+    """Path file untuk menyimpan cache akun GBP secara persisten."""
+    raw = getattr(settings, "GBP_DATA_DIR", None)
+    if raw:
+        return Path(raw).resolve() / "accounts_cache.json"
+    base = Path(__file__).resolve().parent.parent.parent
+    return base / "data" / "accounts_cache.json"
+
+
 # ── Fungsi API ────────────────────────────────────────────────────────
 
-def get_accounts(headers: dict) -> list[dict]:
+def get_accounts(headers: dict, force_refresh: bool = False) -> list[dict]:
     """
-    Ambil semua akun GBP yang dapat diakses.
-    Menggunakan bounded exponential backoff untuk menangani 429.
-    get_accounts() hanya dipanggil SATU KALI per fetch_records() execution.
+    Ambil semua akun GBP yang dapat diakses dengan proteksi caching.
+
+    Untuk mencegah 429 RESOURCE_EXHAUSTED pada service
+    mybusinessaccountmanagement.googleapis.com, hasil get_accounts di-cache
+    di memori dan file disk.
     """
-    log.info("[GBP API] Mengambil daftar Business Accounts...")
+    global _ACCOUNTS_CACHE, _ACCOUNTS_CACHE_TIME
+    import time
+    import json
+
+    now = time.time()
+    cache_path = _get_accounts_cache_path()
+
+    # 1. Cek in-memory cache
+    if not force_refresh and _ACCOUNTS_CACHE is not None:
+        if (now - _ACCOUNTS_CACHE_TIME) < _ACCOUNTS_CACHE_TTL:
+            log.info(f"[GBP API] [get_accounts] Menggunakan memory cache ({len(_ACCOUNTS_CACHE)} akun).")
+            return _ACCOUNTS_CACHE
+
+    # 2. Cek persistent disk cache
+    if not force_refresh and cache_path.exists():
+        try:
+            with open(cache_path, "r", encoding="utf-8") as f:
+                cached_data = json.load(f)
+                if isinstance(cached_data, list) and len(cached_data) > 0:
+                    _ACCOUNTS_CACHE = cached_data
+                    _ACCOUNTS_CACHE_TIME = now
+                    log.info(f"[GBP API] [get_accounts] Menggunakan persistent disk cache dari {cache_path} ({len(cached_data)} akun).")
+                    return cached_data
+        except Exception as e:
+            log.warning(f"[GBP API] [get_accounts] Gagal membaca cache file: {e}")
+
+    # 3. Request ke Google API
+    log.info("[GBP API] [get_accounts] Mengambil daftar Business Accounts dari Google API...")
     url = f"{API_ACCOUNT}/accounts"
-    log.info(f"[GBP API] Endpoint: {url}")
+    log.info(f"[GBP API] [get_accounts] Endpoint: {url}")
 
     resp = _request_with_retry(url, headers=headers, context="get_accounts")
 
     accounts = resp.json().get("accounts", [])
-    log.info(f"[GBP API] Account ditemukan: {len(accounts)}")
+    log.info(f"[GBP API] [get_accounts] Account ditemukan dari Google API: {len(accounts)}")
 
     if not accounts:
         log.warning(
             "[GBP API] Tidak ada Business Account ditemukan.\n"
             "Pastikan akun Google yang digunakan memiliki akses ke Google Business Profile."
         )
+    else:
+        # Simpan ke cache
+        _ACCOUNTS_CACHE = accounts
+        _ACCOUNTS_CACHE_TIME = now
+        try:
+            cache_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(cache_path, "w", encoding="utf-8") as f:
+                json.dump(accounts, f, indent=2)
+            log.info(f"[GBP API] [get_accounts] Berhasil menyimpan akun ke cache disk: {cache_path}")
+        except Exception as e:
+            log.warning(f"[GBP API] [get_accounts] Gagal menyimpan cache akun ke disk: {e}")
 
     return accounts
 
@@ -465,13 +534,14 @@ def get_locations(account_name: str, headers: dict) -> list[dict]:
 
 # ── Fetch Utama ───────────────────────────────────────────────────────
 
-def fetch_records(account_id: str | None = None) -> list[dict]:
+def fetch_records(account_id: str | None = None, force_refresh_accounts: bool = False) -> list[dict]:
     """
-    Ambil dan parse semua lokasi GBP dari API.
+    Ambil dan parse semua lokasi GBP dari API dengan thread safety lock.
 
     Args:
         account_id: Account ID spesifik (format: "accounts/123456789").
-                    Jika None, ambil dari semua akun yang tersedia.
+                    Jika None, periksa settings.GBP_DEFAULT_ACCOUNT_ID atau ambil dari cache/API.
+        force_refresh_accounts: Jika True, paksa refresh daftar akun dari Google API.
 
     Returns:
         List of dict berisi data lokasi yang sudah diparsing.
@@ -483,43 +553,55 @@ def fetch_records(account_id: str | None = None) -> list[dict]:
     """
     from gbp.services.status_parser import parse_location  # avoid circular import
 
-    log.info("[GBP] ══════════════════════════════════════════════════")
-    log.info("[GBP] Memulai fetch Google Business Profile...")
-    log.info(f"[GBP] Credential path: {_get_credentials_path()}")
-    log.info(f"[GBP] Token path: {_get_token_path()}")
+    # Gunakan lock untuk mencegah multiple fetch dieksekusi secara bersamaan (mencegah burst request ganda)
+    lock = _get_fetch_lock()
+    if not lock.acquire(blocking=False):
+        raise RuntimeError("Proses fetch data GBP sedang berjalan di background. Mohon tunggu proses sebelumnya selesai.")
 
-    creds = get_credentials()
-    headers = make_headers(creds)
+    try:
+        log.info("[GBP] ══════════════════════════════════════════════════")
+        log.info("[GBP] Memulai fetch Google Business Profile...")
+        log.info(f"[GBP] Credential path: {_get_credentials_path()}")
+        log.info(f"[GBP] Token path: {_get_token_path()}")
 
-    if account_id:
-        log.info(f"[GBP] Menggunakan account ID spesifik: {account_id}")
-        accounts = [{"name": account_id}]
-    else:
-        accounts = get_accounts(headers)
+        creds = get_credentials()
+        headers = make_headers(creds)
 
-    if not accounts:
-        log.warning("[GBP] Tidak ada akun yang ditemukan. Fetch dihentikan.")
-        return []
+        default_account = getattr(settings, "GBP_DEFAULT_ACCOUNT_ID", "")
+        target_account = account_id or (default_account if default_account else None)
 
-    all_records: list[dict] = []
-    for account in accounts:
-        acct_name = account["name"]
-        log.info(f"[GBP] Mengambil lokasi dari akun: {acct_name}")
-        try:
-            locations = get_locations(acct_name, headers)
-            for loc in locations:
-                record = parse_location(loc)
-                record["account_name"] = acct_name
-                all_records.append(record)
-        except (PermissionError, ValueError, RuntimeError) as e:
-            # Error spesifik dari Google API — log dan lanjutkan ke akun berikutnya
-            log.error(f"[GBP] Gagal mengambil lokasi dari {acct_name}: {e}")
-        except req_lib.HTTPError as e:
-            _handle_http_error(e, context=f"fetch_records({acct_name})")
+        if target_account:
+            log.info(f"[GBP] Menggunakan account ID spesifik/default: {target_account}")
+            accounts = [{"name": target_account}]
+        else:
+            accounts = get_accounts(headers, force_refresh=force_refresh_accounts)
 
-    log.info(f"[GBP] ══════════════════════════════════════════════════")
-    log.info(f"[GBP] Total fetched: {len(all_records)} lokasi dari {len(accounts)} akun.")
-    return all_records
+        if not accounts:
+            log.warning("[GBP] Tidak ada akun yang ditemukan. Fetch dihentikan.")
+            return []
+
+        all_records: list[dict] = []
+        for account in accounts:
+            acct_name = account["name"]
+            log.info(f"[GBP] Mengambil lokasi dari akun: {acct_name}")
+            try:
+                locations = get_locations(acct_name, headers)
+                for loc in locations:
+                    record = parse_location(loc)
+                    record["account_name"] = acct_name
+                    all_records.append(record)
+            except (PermissionError, ValueError, RuntimeError) as e:
+                # Error spesifik dari Google API — log dan lanjutkan ke akun berikutnya
+                log.error(f"[GBP] Gagal mengambil lokasi dari {acct_name}: {e}")
+            except req_lib.HTTPError as e:
+                _handle_http_error(e, context=f"fetch_records({acct_name})")
+
+        log.info(f"[GBP] ══════════════════════════════════════════════════")
+        log.info(f"[GBP] Total fetched: {len(all_records)} lokasi dari {len(accounts)} akun.")
+        return all_records
+
+    finally:
+        lock.release()
 
 
 # ── Guard untuk Web Request ───────────────────────────────────────────

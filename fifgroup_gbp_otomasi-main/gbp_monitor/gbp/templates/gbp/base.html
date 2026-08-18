@@ -65,7 +65,34 @@
     }
 
     .htmx-request.htmx-indicator {
-      opacity: 1
+      opacity: 1;
+    }
+
+    /* Sidebar Navigation Link Styles */
+    .sidebar-nav-link {
+      color: #FFFFFF !important;
+      transition: all 0.2s ease;
+    }
+    .sidebar-nav-link svg {
+      color: #FFFFFF !important;
+      stroke: #FFFFFF !important;
+      transition: all 0.2s ease;
+    }
+    .sidebar-nav-link:hover {
+      color: #FFFFFF !important;
+      background-color: rgba(255, 255, 255, 0.18) !important;
+    }
+    .sidebar-nav-link:hover svg {
+      color: #FFFFFF !important;
+      stroke: #FFFFFF !important;
+    }
+    .sidebar-nav-link.active {
+      color: #0F3C8C !important;
+      background-color: #EFF6FF !important;
+    }
+    .sidebar-nav-link.active svg {
+      color: #0F3C8C !important;
+      stroke: #0F3C8C !important;
     }
   </style>
 
@@ -85,7 +112,7 @@
 
       <!-- Logo -->
       <div class="flex items-center justify-center border-b border-white/10 transition-all duration-300 relative"
-        :class="sidebarCollapsed ? 'px-2 py-4' : 'px-6 py-5'">
+        :class="sidebarCollapsed ? 'px-2' : 'px-6 py-5'">
         <img src="{% static 'gbp/img/fifgroup-logo.png' %}?v=100" alt="FIFGROUP"
           class="object-contain drop-shadow-md transition-all duration-300 hover:scale-105"
           :class="sidebarCollapsed ? 'h-10 w-10' : 'h-20 w-auto max-w-[190px]'">
@@ -96,10 +123,9 @@
         :class="sidebarCollapsed ? 'px-2' : 'pl-6 pr-0'">
 
         <a href="{% url 'gbp:overview' %}{% if request.GET.run_id %}?run_id={{ request.GET.run_id }}{% endif %}"
-          class="flex items-center gap-4 py-3 text-base font-semibold transition-all duration-300 relative group"
+          class="sidebar-nav-link flex items-center gap-4 py-3 text-base font-semibold relative group {% if request.resolver_match.url_name == 'overview' %}active{% endif %}"
           :class="sidebarCollapsed ? 'px-3 rounded-xl justify-center' : 'px-4 rounded-l-full'"
-          :title="sidebarCollapsed ? 'Report' : ''"
-          style="{% if request.resolver_match.url_name == 'overview' %}color: #0F3C8C; background: #EFF6FF;{% else %}color: #bfdbfe;{% endif %}">
+          :title="sidebarCollapsed ? 'Report' : ''">
           {% if request.resolver_match.url_name == 'overview' %}
           <div class="absolute -top-4 right-0 w-4 h-4 bg-transparent shadow-[4px_4px_0_4px_#EFF6FF] rounded-br-full"
             x-show="!sidebarCollapsed"></div>
@@ -115,10 +141,9 @@
         </a>
 
         <a href="{% url 'gbp:data_table' %}{% if request.GET.run_id %}?run_id={{ request.GET.run_id }}{% endif %}"
-          class="flex items-center gap-4 py-3 text-base font-semibold transition-all duration-300 relative group"
+          class="sidebar-nav-link flex items-center gap-4 py-3 text-base font-semibold relative group {% if request.resolver_match.url_name == 'data_table' %}active{% endif %}"
           :class="sidebarCollapsed ? 'px-3 rounded-xl justify-center' : 'px-4 rounded-l-full'"
-          :title="sidebarCollapsed ? 'Store Data' : ''"
-          style="{% if request.resolver_match.url_name == 'data_table' %}color: #0F3C8C; background: #EFF6FF;{% else %}color: #bfdbfe;{% endif %}">
+          :title="sidebarCollapsed ? 'Store Data' : ''">
           {% if request.resolver_match.url_name == 'data_table' %}
           <div class="absolute -top-4 right-0 w-4 h-4 bg-transparent shadow-[4px_4px_0_4px_#EFF6FF] rounded-br-full"
             x-show="!sidebarCollapsed"></div>
@@ -133,10 +158,10 @@
         </a>
 
         <a href="{% url 'gbp:map_view' %}{% if request.GET.run_id %}?run_id={{ request.GET.run_id }}{% endif %}"
-          class="flex items-center gap-4 py-3 text-base font-semibold transition-all duration-300 relative group"
+          class="sidebar-nav-link flex items-center gap-4 py-3 text-base font-semibold relative group {% if request.resolver_match.url_name == 'map_view' %}active{% endif %}"
           :class="sidebarCollapsed ? 'px-3 rounded-xl justify-center' : 'px-4 rounded-l-full'"
           :title="sidebarCollapsed ? 'Map View' : ''"
-          style="{% if request.resolver_match.url_name == 'map_view' %}color: #0F3C8C; background: #EFF6FF;{% else %}color: #bfdbfe;{% endif %}">
+          hx-boost="false">
           {% if request.resolver_match.url_name == 'map_view' %}
           <div class="absolute -top-4 right-0 w-4 h-4 bg-transparent shadow-[4px_4px_0_4px_#EFF6FF] rounded-br-full"
             x-show="!sidebarCollapsed"></div>
@@ -152,10 +177,9 @@
         </a>
 
         <a href="{% url 'gbp:update_status' %}"
-          class="flex items-center gap-4 py-3 text-base font-semibold transition-all duration-300 relative group"
+          class="sidebar-nav-link flex items-center gap-4 py-3 text-base font-semibold relative group {% if request.resolver_match.url_name == 'update_status' %}active{% endif %}"
           :class="sidebarCollapsed ? 'px-3 rounded-xl justify-center' : 'px-4 rounded-l-full'"
-          :title="sidebarCollapsed ? 'Update Status' : ''"
-          style="{% if request.resolver_match.url_name == 'update_status' %}color: #0F3C8C; background: #EFF6FF;{% else %}color: #bfdbfe;{% endif %}">
+          :title="sidebarCollapsed ? 'Update Status' : ''">
           {% if request.resolver_match.url_name == 'update_status' %}
           <div class="absolute -top-4 right-0 w-4 h-4 bg-transparent shadow-[4px_4px_0_4px_#EFF6FF] rounded-br-full"
             x-show="!sidebarCollapsed"></div>
@@ -171,10 +195,9 @@
         </a>
 
         <a href="{% url 'gbp:download_report' %}"
-          class="flex items-center gap-4 py-3 text-base font-semibold transition-all duration-300 relative group"
+          class="sidebar-nav-link flex items-center gap-4 py-3 text-base font-semibold relative group {% if request.resolver_match.url_name == 'download_report' %}active{% endif %}"
           :class="sidebarCollapsed ? 'px-3 rounded-xl justify-center' : 'px-4 rounded-l-full'"
-          :title="sidebarCollapsed ? 'Download' : ''"
-          style="{% if request.resolver_match.url_name == 'download_report' %}color: #0F3C8C; background: #EFF6FF;{% else %}color: #bfdbfe;{% endif %}">
+          :title="sidebarCollapsed ? 'Download' : ''">
           {% if request.resolver_match.url_name == 'download_report' %}
           <div class="absolute -top-4 right-0 w-4 h-4 bg-transparent shadow-[4px_4px_0_4px_#EFF6FF] rounded-br-full"
             x-show="!sidebarCollapsed"></div>
@@ -215,7 +238,7 @@
           </button>
         </form>
         <a href="/admin/"
-          class="w-full flex items-center justify-center gap-2 py-2.5 rounded-full text-sm font-semibold text-blue-200 border border-blue-400/50 hover:bg-white/5 hover:text-white transition-all"
+          class="w-full flex items-center justify-center gap-2 py-2.5 rounded-full text-sm font-semibold text-white border border-white/30 hover:bg-white/15 hover:border-white/60 transition-all"
           :class="sidebarCollapsed ? 'px-0' : 'px-4'" :title="sidebarCollapsed ? 'Admin' : ''" hx-boost="false">
           <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round"

@@ -1301,7 +1301,9 @@
             <div class="stat-lbl">Ditampilkan di Peta</div>
           </div>
         </div>
-        <div class="stat-row">
+        <div class="stat-row {% if without_coords_count > 0 or coord_issues %}cursor-pointer hover:bg-amber-50/75 transition-all group{% endif %}"
+          {% if without_coords_count > 0 or coord_issues %}onclick="openCoordModal()" title="Klik untuk melihat daftar lokasi tanpa koordinat"{% endif %}
+          style="{% if without_coords_count > 0 %}border: 1px solid rgba(245,158,11,0.3); background: rgba(254,243,199,0.3); border-radius: 8px;{% endif %}">
           <div class="stat-icon" style="background:linear-gradient(135deg,#fef3c7,#fde68a);">
             <svg style="width:13px;height:13px;color:#d97706;" fill="none" stroke="currentColor" viewBox="0 0 24 24"
               stroke-width="2">
@@ -1309,8 +1311,15 @@
                 d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
             </svg>
           </div>
-          <div>
-            <div class="stat-num" style="color:#d97706;">{{ without_coords_count }}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;">
+              <div class="stat-num" style="color:#d97706;">{{ without_coords_count }}</div>
+              {% if without_coords_count > 0 or coord_issues %}
+              <span style="font-size:9.5px;font-weight:700;color:#b45309;background:#fef3c7;padding:1.5px 6px;border-radius:999px;border:1px solid #fde68a;display:inline-flex;align-items:center;gap:2px;">
+                Lihat Detail &rarr;
+              </span>
+              {% endif %}
+            </div>
             <div class="stat-lbl">Tanpa Koordinat</div>
           </div>
         </div>
@@ -1327,110 +1336,6 @@
           </div>
         </div>
       </div>
-
-      <!-- Legend -->
-      <div class="sb-section">
-        <div class="sb-label">Legenda Peta</div>
-
-        <!-- Legend Status -->
-        <div id="legend-status">
-          <div
-            style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;margin-top:2px;">
-            Status Verifikasi</div>
-          <div style="display:flex;flex-direction:column;gap:2px;">
-            <div class="legend-row"><span class="legend-dot" style="background:#16a34a;"></span><span
-                style="color:#15803d;font-weight:600;">Verified</span></div>
-            <div class="legend-row"><span class="legend-dot" style="background:#eab308;"></span><span
-                style="color:#a16207;font-weight:600;">Need Verification</span></div>
-            <div class="legend-row"><span class="legend-dot" style="background:#ea580c;"></span><span
-                style="color:#c2410c;font-weight:600;">Duplicate</span></div>
-            <div class="legend-row"><span class="legend-dot" style="background:#dc2626;"></span><span
-                style="color:#b91c1c;font-weight:600;">Suspended</span></div>
-          </div>
-        </div>
-
-        <!-- Legend Network -->
-        <div id="legend-network" style="display:none;">
-          <div
-            style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;margin-top:2px;">
-            Jenis Network (Marker)</div>
-          <div style="display:flex;flex-direction:column;gap:4px;">
-            <div class="legend-item">
-              <div class="legend-icon-wrap"><svg width="15" height="17" viewBox="0 0 30 34"><path d="M15 2L3 9.5v19a1.5 1.5 0 001.5 1.5h21a1.5 1.5 0 001.5-1.5V9.5L15 2z" fill="#2563eb"/><rect x="7" y="11" width="4.5" height="4.5" fill="white"/><rect x="18.5" y="11" width="4.5" height="4.5" fill="white"/><rect x="7" y="18" width="4.5" height="4.5" fill="white"/><rect x="18.5" y="18" width="4.5" height="4.5" fill="white"/><path d="M13 22h4v8h-4z" fill="white"/></svg></div>
-              <span style="font-weight:600;color:#1e40af;">Cabang</span>
-              <span style="font-size:9.5px;color:#94a3b8;margin-left:auto;">Blue (Gedung)</span>
-            </div>
-            <div class="legend-item">
-              <div class="legend-icon-wrap"><svg width="15" height="17" viewBox="0 0 30 34"><path d="M15 2L1.5 13.5l2.5 2 1.5-1.2V28a2 2 0 002 2h15a2 2 0 002-2V14.3l1.5 1.2 2.5-2L15 2z" fill="#f97316"/><rect x="12" y="19" width="6" height="11" fill="white"/><rect x="7.5" y="16" width="3.5" height="4" fill="white"/><rect x="19" y="16" width="3.5" height="4" fill="white"/></svg></div>
-              <span style="font-weight:600;color:#c2410c;">Pos</span>
-              <span style="font-size:9.5px;color:#94a3b8;margin-left:auto;">Orange (Rumah)</span>
-            </div>
-            <div class="legend-item">
-              <div class="legend-icon-wrap"><svg width="15" height="17" viewBox="0 0 30 34"><rect x="3" y="13" width="24" height="17" rx="2" fill="#22c55e"/><path d="M2 13l3.5-9h19l3.5 9z" fill="#22c55e"/><path d="M8.5 4v9M15 4v9M21.5 4v9" stroke="white" stroke-width="1.6"/><rect x="6" y="18" width="7.5" height="7.5" fill="white"/><rect x="16.5" y="18" width="7.5" height="12" fill="white"/></svg></div>
-              <span style="font-weight:600;color:#15803d;">Kios</span>
-              <span style="font-size:9.5px;color:#94a3b8;margin-left:auto;">Light Green (Toko)</span>
-            </div>
-            <div class="legend-item">
-              <div class="legend-icon-wrap"><svg width="15" height="17" viewBox="0 0 30 34"><rect x="3" y="13" width="24" height="17" rx="2" fill="#0d9488"/><path d="M2 13l3.5-9h19l3.5 9z" fill="#0d9488"/><path d="M8.5 4v9M15 4v9M21.5 4v9" stroke="white" stroke-width="1.6"/><rect x="6" y="18" width="7.5" height="7.5" fill="white"/><rect x="16.5" y="18" width="7.5" height="12" fill="white"/></svg></div>
-              <span style="font-weight:600;color:#0f766e;">Sub Kios</span>
-              <span style="font-size:9.5px;color:#94a3b8;margin-left:auto;">Teal Green (Toko)</span>
-            </div>
-            <div class="legend-item">
-              <div class="legend-icon-wrap"><svg width="14" height="16" viewBox="0 0 26 30"><path d="M13 2C7.5 2 3 6.5 3 12c0 7.5 10 16 10 16s10-8.5 10-16c0-5.5-4.5-10-10-10z" fill="#64748b"/><circle cx="13" cy="11" r="3.5" fill="white"/></svg></div>
-              <span style="font-weight:600;color:#475569;">Lainnya</span>
-              <span style="font-size:9.5px;color:#94a3b8;margin-left:auto;">Gray</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Legend Coverage -->
-        <div id="legend-coverage" style="display:none;">
-          <div
-            style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;margin-top:2px;">
-            Branch Coverage</div>
-          <div style="display:flex;flex-direction:column;gap:4px;">
-            <div class="legend-item">
-              <div style="width:16px;height:12px;border:1.5px dashed #2563eb;background:rgba(37,99,235,0.18);border-radius:3px;flex-shrink:0;"></div>
-              <span style="font-weight:600;color:#1e293b;">Wilayah Cakupan</span>
-              <span style="font-size:9.5px;color:#94a3b8;margin-left:auto;">Polygon</span>
-            </div>
-            <div class="legend-item">
-              <div class="legend-icon-wrap"><svg width="15" height="17" viewBox="0 0 30 34"><path d="M15 2L3 9.5v19a1.5 1.5 0 001.5 1.5h21a1.5 1.5 0 001.5-1.5V9.5L15 2z" fill="#2563eb"/><rect x="7" y="11" width="4.5" height="4.5" fill="white"/><rect x="18.5" y="11" width="4.5" height="4.5" fill="white"/><rect x="7" y="18" width="4.5" height="4.5" fill="white"/><rect x="18.5" y="18" width="4.5" height="4.5" fill="white"/><path d="M13 22h4v8h-4z" fill="white"/></svg></div>
-              <span style="font-weight:600;color:#1e40af;">Cabang</span>
-            </div>
-            <div class="legend-item">
-              <div class="legend-icon-wrap"><svg width="15" height="17" viewBox="0 0 30 34"><path d="M15 2L1.5 13.5l2.5 2 1.5-1.2V28a2 2 0 002 2h15a2 2 0 002-2V14.3l1.5 1.2 2.5-2L15 2z" fill="#f97316"/><rect x="12" y="19" width="6" height="11" fill="white"/><rect x="7.5" y="16" width="3.5" height="4" fill="white"/><rect x="19" y="16" width="3.5" height="4" fill="white"/></svg></div>
-              <span style="font-weight:600;color:#c2410c;">Pos</span>
-            </div>
-            <div class="legend-item">
-              <div class="legend-icon-wrap"><svg width="15" height="17" viewBox="0 0 30 34"><rect x="3" y="13" width="24" height="17" rx="2" fill="#22c55e"/><path d="M2 13l3.5-9h19l3.5 9z" fill="#22c55e"/><path d="M8.5 4v9M15 4v9M21.5 4v9" stroke="white" stroke-width="1.6"/><rect x="6" y="18" width="7.5" height="7.5" fill="white"/><rect x="16.5" y="18" width="7.5" height="12" fill="white"/></svg></div>
-              <span style="font-weight:600;color:#15803d;">Kios</span>
-            </div>
-            <div class="legend-item">
-              <div class="legend-icon-wrap"><svg width="15" height="17" viewBox="0 0 30 34"><rect x="3" y="13" width="24" height="17" rx="2" fill="#0d9488"/><path d="M2 13l3.5-9h19l3.5 9z" fill="#0d9488"/><path d="M8.5 4v9M15 4v9M21.5 4v9" stroke="white" stroke-width="1.6"/><rect x="6" y="18" width="7.5" height="7.5" fill="white"/><rect x="16.5" y="18" width="7.5" height="12" fill="white"/></svg></div>
-              <span style="font-weight:600;color:#0f766e;">Sub Kios</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Masalah Koordinat -->
-      {% if coord_issues %}
-      <div class="sb-section">
-        <button class="issue-btn" onclick="openCoordModal()">
-          <svg style="width:12px;height:12px;flex-shrink:0;" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-            stroke-width="2.2">
-            <path stroke-linecap="round" stroke-linejoin="round"
-              d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-          </svg>
-          <span style="flex:1;text-align:left;">Masalah Koordinat: {{ coord_issues|length }} lokasi</span>
-          <svg style="width:10px;height:10px;opacity:0.5;" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-            stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
-      </div>
-      {% endif %}
 
     </div><!-- /#map-sidebar standard -->
 
@@ -2764,12 +2669,18 @@
     renderCard('nl', cur.nl ?? null, prev.nl ?? null, formatRupiah, 'nl');
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
+  function startMapApp() {
     initMap();
     loadMapData();
     setMode(currentMode);
     initPerfYearSelect();
-  });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startMapApp);
+  } else {
+    startMapApp();
+  }
 </script>
 {% endif %}
 

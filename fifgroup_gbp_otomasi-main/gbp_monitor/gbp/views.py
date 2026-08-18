@@ -201,10 +201,11 @@ class MapView(View):
         )
         without_coords_count = len(all_snapshots) - with_coords_count
 
-        # Koordinat bermasalah
+        # Koordinat bermasalah / tanpa koordinat
         coord_issues = [
             s for s in all_snapshots
-            if s.get("coord_status") and s.get("coord_status") != "OK"
+            if (s.get("latitude") is None or s.get("longitude") is None)
+            or (s.get("coord_status") and s.get("coord_status") != "OK")
         ]
 
         ctx.update({

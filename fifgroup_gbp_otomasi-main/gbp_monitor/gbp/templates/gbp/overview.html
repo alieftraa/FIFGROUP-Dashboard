@@ -72,31 +72,36 @@
             <div class="w-2.5 h-2.5 rounded-full flex-shrink-0 group-hover:scale-125 transition-transform"
               style="background-color: #0F3C8C"></div>
             <span class="flex-1 text-[11px] text-[#8C8AA0] font-medium truncate">Verified</span>
-            <span class="text-xs font-display font-bold text-[#0F172A] tabular-nums">{{summary.verified|default:0}}</span>
+            <span
+              class="text-xs font-display font-bold text-[#0F172A] tabular-nums">{{summary.verified|default:0}}</span>
           </div>
           <div class="flex items-center gap-2 group">
             <div class="w-2.5 h-2.5 rounded-full flex-shrink-0 group-hover:scale-125 transition-transform"
               style="background-color: #00AEEF"></div>
             <span class="flex-1 text-[11px] text-[#8C8AA0] font-medium truncate">Duplicate</span>
-            <span class="text-xs font-display font-bold text-[#0F172A] tabular-nums">{{summary.duplicate|default:0}}</span>
+            <span
+              class="text-xs font-display font-bold text-[#0F172A] tabular-nums">{{summary.duplicate|default:0}}</span>
           </div>
           <div class="flex items-center gap-2 group">
             <div class="w-2.5 h-2.5 rounded-full flex-shrink-0 group-hover:scale-125 transition-transform"
               style="background-color: #3da9fc"></div>
             <span class="flex-1 text-[11px] text-[#8C8AA0] font-medium truncate">Suspended</span>
-            <span class="text-xs font-display font-bold text-[#0F172A] tabular-nums">{{summary.suspended|default:0}}</span>
+            <span
+              class="text-xs font-display font-bold text-[#0F172A] tabular-nums">{{summary.suspended|default:0}}</span>
           </div>
           <div class="flex items-center gap-2 group">
             <div class="w-2.5 h-2.5 rounded-full flex-shrink-0 group-hover:scale-125 transition-transform"
               style="background-color: #d4537e"></div>
             <span class="flex-1 text-[11px] text-[#8C8AA0] font-medium truncate">Need Reverification</span>
-            <span class="text-xs font-display font-bold text-[#0F172A] tabular-nums">{{summary.need_verification|default:0}}</span>
+            <span
+              class="text-xs font-display font-bold text-[#0F172A] tabular-nums">{{summary.need_verification|default:0}}</span>
           </div>
           <div class="flex items-center gap-2 group">
             <div class="w-2.5 h-2.5 rounded-full flex-shrink-0 group-hover:scale-125 transition-transform"
               style="background-color: #8c8aa0"></div>
             <span class="flex-1 text-[11px] text-[#8C8AA0] font-medium truncate">Unverified</span>
-            <span class="text-xs font-display font-bold text-[#0F172A] tabular-nums">{{summary.unverified|default:0}}</span>
+            <span
+              class="text-xs font-display font-bold text-[#0F172A] tabular-nums">{{summary.unverified|default:0}}</span>
           </div>
         </div>
       </div>
@@ -133,14 +138,16 @@
                 <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background: #0F3C8C"></span>
                 <span class="text-[11px] text-[#8C8AA0] font-medium truncate">Terverifikasi</span>
               </div>
-              <span class="text-xs font-bold font-display text-primary tabular-nums flex-shrink-0">{{gauge_verified}}</span>
+              <span
+                class="text-xs font-bold font-display text-primary tabular-nums flex-shrink-0">{{gauge_verified}}</span>
             </div>
             <div class="flex items-center justify-between gap-2">
               <div class="flex items-center gap-1.5 min-w-0">
                 <span class="w-2.5 h-2.5 rounded-full bg-[#EEF0F7] flex-shrink-0"></span>
                 <span class="text-[11px] text-[#8C8AA0] font-medium truncate">Belum Verifikasi</span>
               </div>
-              <span class="text-xs font-bold font-display text-[#8C8AA0] tabular-nums flex-shrink-0">{{gauge_unverified}}</span>
+              <span
+                class="text-xs font-bold font-display text-[#8C8AA0] tabular-nums flex-shrink-0">{{gauge_unverified}}</span>
             </div>
           </div>
         </div>
@@ -203,9 +210,11 @@
               <td class="px-3 py-3">
                 <div class="flex items-center gap-2">
                   <div class="w-full bg-[#EEF0F7] rounded-full h-1.5 overflow-hidden flex-1">
-                    <div class="progress-teal h-full rounded-full" style="width:{{area.verification_rate }}%"></div>
+                    <div class="progress-teal h-full rounded-full"
+                      style="width: {{ area.verification_rate|default:0 }}%;"></div>
                   </div>
-                  <span class="text-[10px] font-bold text-[#8C8AA0] tabular-nums w-8 text-right">{{area.verification_rate}}%</span>
+                  <span class="text-[10px] font-bold text-[#8C8AA0] tabular-nums w-8 text-right">{{
+                    area.verification_rate }}%</span>
                 </div>
               </td>
             </tr>
@@ -237,15 +246,17 @@
           <tbody class="divide-y divide-[#EFF6FF]">
             {% for area in bottom_areas|slice:":5" %}
             <tr class="hover:bg-pink-50/30 transition-colors">
-              <td class="px-3 py-3 text-[#8C8AA0] font-mono text-[10px]">{{forloop.counter }}</td>
-              <td class="px-3 py-3 font-medium text-[#0F172A] text-xs">{{area.area }}</td>
-              <td class="px-3 py-3 text-right text-[#D4537E] font-bold tabular-nums text-xs">{{area.verified }}</td>
+              <td class="px-3 py-3 text-[#8C8AA0] font-mono text-[10px]">{{ forloop.counter }}</td>
+              <td class="px-3 py-3 font-medium text-[#0F172A] text-xs">{{ area.area }}</td>
+              <td class="px-3 py-3 text-right text-[#D4537E] font-bold tabular-nums text-xs">{{ area.verified }}</td>
               <td class="px-3 py-3">
                 <div class="flex items-center gap-2">
                   <div class="w-full bg-[#EEF0F7] rounded-full h-1.5 overflow-hidden flex-1">
-                    <div class="progress-pink h-full rounded-full" style="width:{{area.verification_rate }}%"></div>
+                    <div class="progress-pink h-full rounded-full"
+                      style="width: {{ area.verification_rate|default:0 }}%;"></div>
                   </div>
-                  <span class="text-[10px] font-bold text-[#8C8AA0] tabular-nums w-8 text-right">{{area.verification_rate}}%</span>
+                  <span class="text-[10px] font-bold text-[#8C8AA0] tabular-nums w-8 text-right">{{
+                    area.verification_rate }}%</span>
                 </div>
               </td>
             </tr>
@@ -312,7 +323,10 @@
 </div>
 <!-- /flex-col gap-6 wrapper -->
 
-{% endif %} {% endblock %} {% block extra_scripts %}
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
 <script>
   // ── Palette ────────────────────────────────────────────────────
   var PURPLE = '#0F3C8C';
@@ -327,78 +341,79 @@
   if (distEl) {
     var distOptions = {
       series: [
-        {{ summary.verified|default:0 }},
-        {{ summary.duplicate|default:0 }},
-        {{ summary.suspended|default:0 }},
-        {{ summary.need_verification|default:0 }},
-        {{ summary.unverified|default:0 }}
+        Number('{{ summary.verified|default:0 }}'),
+        Number('{{ summary.duplicate|default:0 }}'),
+        Number('{{ summary.suspended|default:0 }}'),
+        Number('{{ summary.need_verification|default:0 }}'),
+        Number('{{ summary.unverified|default:0 }}')
       ],
       chart: {
-    type: 'donut',
-      height: 160,
+        type: 'donut',
+        height: 160,
         animations: { enabled: true, easing: 'easeinout', speed: 800 }
-  },
-  labels: ['Verified', 'Duplicate', 'Suspended', 'Need Reverification', 'Unverified'],
-    colors: [PURPLE, TEAL, SKY, PINK, LAVND],
+      },
+      labels: ['Verified', 'Duplicate', 'Suspended', 'Need Reverification', 'Unverified'],
+      colors: [PURPLE, TEAL, SKY, PINK, LAVND],
       plotOptions: {
-    pie: {
-      donut: { size: '65%' },
-      expandOnClick: false
-    }
-  },
-  dataLabels: { enabled: false },
-  stroke: { width: 0 },
-  legend: { show: false },
-  tooltip: {
-    theme: 'dark',
-      y: { formatter: function(val) { return val.toLocaleString() + ' Lokasi'; } }
-  }};
-  new ApexCharts(distEl, distOptions).render();
+        pie: {
+          donut: { size: '65%' },
+          expandOnClick: false
+        }
+      },
+      dataLabels: { enabled: false },
+      stroke: { width: 0 },
+      legend: { show: false },
+      tooltip: {
+        theme: 'dark',
+        y: { formatter: function(val) { return val.toLocaleString() + ' Lokasi'; } }
+      }
+    };
+    new ApexCharts(distEl, distOptions).render();
   }
 
   // ── 2. Verification Progress Gauge (ApexCharts RadialBar) ──────
   var gaugeEl = document.getElementById('verificationGauge');
   if (gaugeEl) {
-    var gaugeVerified = {{ gauge_verified|default:0 }};
-    var gaugeTotal = {{ gauge_total|default:0 }};
+    var gaugeVerified = Number('{{ gauge_verified|default:0 }}');
+    var gaugeTotal = Number('{{ gauge_total|default:0 }}');
     var gaugePct = gaugeTotal > 0 ? Math.round((gaugeVerified / gaugeTotal) * 100) : 0;
 
-  var gaugeOptions = {
-    series: [gaugePct],
-    chart: {
-      type: 'radialBar',
-      height: 160,
-      offsetY: 0,
-      sparkline: { enabled: true },
-      animations: { enabled: true, easing: 'easeinout', speed: 1000 }
-    },
-    plotOptions: {
-      radialBar: {
-        startAngle: -90,
-        endAngle: 90,
-        hollow: { size: '60%' },
-        track: { background: '#EEF0F7', strokeWidth: '100%', margin: 0 },
-        dataLabels: { show: false } // Text is handled by HTML absolutely positioned overlay
-      }
-    },
-    fill: {
-      type: 'gradient',
-      gradient: {
-        shade: 'dark',
-        type: 'horizontal',
-        colorStops: [
-          { offset: 0, color: PURPLE, opacity: 1 },
-          { offset: 100, color: TEAL, opacity: 1 }
-        ]
-      }
-    },
-    stroke: { lineCap: 'round' }
-  };
-  new ApexCharts(gaugeEl, gaugeOptions).render();
+    var gaugeOptions = {
+      series: [gaugePct],
+      chart: {
+        type: 'radialBar',
+        height: 160,
+        offsetY: 0,
+        sparkline: { enabled: true },
+        animations: { enabled: true, easing: 'easeinout', speed: 1000 }
+      },
+      plotOptions: {
+        radialBar: {
+          startAngle: -90,
+          endAngle: 90,
+          hollow: { size: '60%' },
+          track: { background: '#EEF0F7', strokeWidth: '100%', margin: 0 },
+          dataLabels: { show: false }
+        }
+      },
+      fill: {
+        type: 'gradient',
+        gradient: {
+          shade: 'dark',
+          type: 'horizontal',
+          colorStops: [
+            { offset: 0, color: PURPLE, opacity: 1 },
+            { offset: 100, color: TEAL, opacity: 1 }
+          ]
+        }
+      },
+      stroke: { lineCap: 'round' }
+    };
+    new ApexCharts(gaugeEl, gaugeOptions).render();
   }
 
   // ── 3. Verified Growth Chart (ApexCharts Line + Bar) ───────────
-  var growthData = {{ verified_growth_json|default:"[]" | safe }};
+  var growthData = {{ verified_growth_json|default:"[]"|safe }};
 
   if (growthData && growthData.length > 0) {
     var growthEl = document.getElementById('verifiedGrowthChart');
@@ -425,7 +440,7 @@
         },
         colors: [TEAL, PURPLE],
         stroke: {
-          width: [0, 4],
+          width: [0, 3],
           curve: 'smooth'
         },
         plotOptions: {
@@ -468,6 +483,11 @@
         }
       };
       new ApexCharts(growthEl, growthOptions).render();
+    }
+  } else {
+    var growthEl = document.getElementById('verifiedGrowthChart');
+    if (growthEl) {
+      growthEl.innerHTML = '<div class="flex items-center justify-center h-full min-h-[180px] text-xs text-[#8C8AA0]"><p>Belum ada data riwayat tren verifikasi.</p></div>';
     }
   }
 </script>

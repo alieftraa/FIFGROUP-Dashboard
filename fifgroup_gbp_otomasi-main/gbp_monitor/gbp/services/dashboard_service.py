@@ -126,14 +126,17 @@ def get_overview_summary(run_id: int | None = None) -> Dict[str, Any]:
 def get_verified_growth_timeseries(days: int = 30) -> List[Dict[str, Any]]:
     # Ambil runs dalam X hari terakhir
     cutoff = timezone.now().date() - timedelta(days=days)
-    runs = FetchRun.objects.filter(run_date__gte=cutoff).order_by('run_date', 'id')
+    runs = list(FetchRun.objects.filter(run_date__gte=cutoff).order_by('run_date', 'id'))
+    
+    # Fallback: jika tidak ada run dalam X hari terakhir, ambil semua run terbaru yang ada (maksimal 30)
+    if not runs:
+        runs = list(FetchRun.objects.order_by('-run_date', '-id')[:days])
+        runs.reverse()  # Urutkan kronologis dari yang terlama ke terbaru
     
     timeseries = []
     prev_verified = None
     
     for run in runs:
-        # Panggil summary untuk run ini (ini agak mahal jika banyak data, tapi OK untuk 30 hari)
-        # Jika data ribuan dan performa lambat, kita bisa mengoptimalkan ini nanti
         summary = get_overview_summary(run.id)
         verified = summary['verified']
         
