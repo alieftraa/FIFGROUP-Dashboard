@@ -26,6 +26,8 @@ urlpatterns = [
     path("api/fetch-run/", views.TriggerFetchView.as_view(), name="trigger_fetch"),
     path("api/trend/", views.TrendDataView.as_view(), name="trend_data"),
     path("api/map-data/", views.MapDataAPIView.as_view(), name="map_data_api"),
+    path("api/area-coverage/", views.AreaCoverageAPIView.as_view(), name="area_coverage_api"),
+    path("api/area-color-map/", views.AreaColorMapAPIView.as_view(), name="area_color_map_api"),
     path("api/branch-boundaries/", views.BranchBoundariesAPIView.as_view(), name="branch_boundaries_api"),
     path("api/branch-performance/", views.BranchPerformanceAPIView.as_view(), name="branch_performance_api"),
 

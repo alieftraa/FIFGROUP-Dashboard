@@ -182,42 +182,48 @@ class MapView(View):
         selected_mode = request.GET.get("mode", "status")
 
         # ══════════════════════════════════════════════════════════
-        # MODE: BRANCH COVERAGE
+        # MAP VIEW — Data lokasi network real (Cabang, Pos, Kios)
         # ══════════════════════════════════════════════════════════
-        if selected_mode == "coverage":
-            return self._handle_coverage_mode(request, ctx, run_id)
+        from gbp.services import area_coverage_service as ac_svc
 
-        # ══════════════════════════════════════════════════════════
-        # MODE: STATUS / NETWORK — Data dikirim via JSON API ke Leaflet
-        # Folium tidak lagi digunakan untuk mode ini.
-        # ══════════════════════════════════════════════════════════
+        net_stats = ac_svc.get_network_locations_stats(run_id=run_id)
+        all_network_locs = ac_svc.get_all_network_locations(run_id=run_id)
 
-        # Ambil semua snapshot untuk statistik sidebar
-        all_snapshots = history_service.get_snapshots(run_id=run_id)
+        with_coords_count = net_stats["with_coords"]
+        without_coords_count = net_stats["without_coords"]
+        total_count = net_stats["total"]
 
-        with_coords_count = sum(
-            1 for s in all_snapshots
-            if s.get("latitude") is not None and s.get("longitude") is not None
-        )
-        without_coords_count = len(all_snapshots) - with_coords_count
+        # Area color map & metadata untuk frontend JS
+        area_color_map = ac_svc.get_area_color_map()
+        areas_meta = ac_svc.get_all_areas_meta()  # [{area, color, bounds, ...}]
 
         # Koordinat bermasalah / tanpa koordinat
         coord_issues = [
-            s for s in all_snapshots
-            if (s.get("latitude") is None or s.get("longitude") is None)
-            or (s.get("coord_status") and s.get("coord_status") != "OK")
+            l for l in all_network_locs
+            if (l.get("latitude") is None or l.get("longitude") is None)
+            or (l.get("coord_status") and l.get("coord_status") != "OK")
         ]
 
         ctx.update({
             "with_coords_count": with_coords_count,
             "without_coords_count": without_coords_count,
-            "total_count": len(all_snapshots),
+            "total_count": total_count,
+            "cabang_count": net_stats["cabang_count"],
+            "pos_count": net_stats["pos_count"],
+            "kios_count": net_stats["kios_count"],
+            "kios_direct_count": net_stats.get("kios_direct_count", 0),
+            "kios_via_pos_count": net_stats.get("kios_via_pos_count", 0),
             "selected_mode": selected_mode,
+            # Embed area colors & metadata ke template agar frontend tidak perlu extra API call
+            "area_color_map_json": json.dumps(area_color_map, ensure_ascii=False),
+            "areas_meta_json": json.dumps(areas_meta, ensure_ascii=False),
             "coord_issues": coord_issues,
             "coord_issues_json": json.dumps([
                 {
                     "store_code": s.get("store_code") or "—",
-                    "business_name": s.get("business_name") or "—",
+                    "business_name": s.get("business_name") or s.get("name") or "—",
+                    "network_type": s.get("network_type") or "—",
+                    "area": s.get("area") or "—",
                     "address": (s.get("address") or "")[:80],
                     "coord_status": s.get("coord_status") or "UNKNOWN",
                 }
@@ -296,16 +302,16 @@ class MapView(View):
 
 class MapDataAPIView(View):
     """
-    Endpoint JSON yang menyediakan semua data lokasi untuk Leaflet map.
-    Menggabungkan LocationSnapshot (koordinat & status) dengan MasterLocation
-    (jenis network, nama network, area, dsb.).
+    Endpoint JSON yang menyediakan semua data lokasi network real FIFGROUP
+    (Cabang, Pos, Kios) untuk Leaflet map.
 
-    GET /api/map-data/?run_id=<id>
+    GET /api/map-data/?run_id=<id>&area=<area_name>&network=<network_type>
     """
 
     def get(self, request: HttpRequest) -> JsonResponse:
-        run_id = request.GET.get("run_id")
+        from gbp.services import area_coverage_service as ac_svc
 
+        run_id = request.GET.get("run_id")
         try:
             run_id = int(run_id) if run_id else None
         except (ValueError, TypeError):
@@ -315,157 +321,69 @@ class MapDataAPIView(View):
             all_runs = history_service.get_all_runs()
             run_id = all_runs[0]["run_id"] if all_runs else None
 
-        if not run_id:
-            return JsonResponse({"locations": [], "stats": {"with_coords": 0, "without_coords": 0, "total": 0}})
+        area_filter = request.GET.get("area", "").strip()
+        net_filter = request.GET.get("network", "").strip()
 
-        snapshots = history_service.get_snapshots(run_id=run_id)
+        locations = ac_svc.get_all_network_locations(run_id=run_id)
 
-        # Ambil semua store_code untuk join ke MasterLocation
-        store_codes = [s["store_code"] for s in snapshots if s.get("store_code")]
+        if area_filter:
+            locations = [l for l in locations if (l.get("area") or "").strip().upper() == area_filter.upper()]
+        if net_filter:
+            locations = [l for l in locations if (l.get("network_type") or "").strip().lower() == net_filter.lower()]
 
-        # Data dari MasterLocation: network type, network_name, area
-        master_qs = MasterLocation.objects.filter(
-            store_code__in=store_codes
-        ).values("store_code", "network", "network_name", "area")
+        with_coords = sum(
+            1 for l in locations
+            if l.get("latitude") is not None and l.get("longitude") is not None and l.get("coord_status") == "OK"
+        )
+        without_coords = len(locations) - with_coords
+        cabang_count = sum(1 for l in locations if l.get("network_type") == "Cabang")
+        pos_count = sum(1 for l in locations if l.get("network_type") == "Pos")
+        kios_count = sum(1 for l in locations if l.get("network_type") == "Kios")
 
-        # Build lookup dict
-        master_map = {}
-        for m in master_qs:
-            master_map[m["store_code"]] = {
-                "raw_network": m["network"] or "",
-                "network_name": m["network_name"] or "",
-                "area": m["area"] or "",
-            }
-
-        def normalize_network_type(raw, business_name="", store_code=""):
-            """Normalisasi tipe network ke: Cabang, Pos, Kios, Subkios, Lainnya."""
-            if raw:
-                v = str(raw).strip().lower()
-                if v in ("cabang", "branch") or "cabang" in v:
-                    return "Cabang"
-                if v == "pos" or "pos" in v:
-                    return "Pos"
-                if "subkios" in v or "sub kios" in v or "sub_kios" in v:
-                    return "Subkios"
-                if "kios" in v:
-                    return "Kios"
-
-            # Infer dari nama bisnis
-            bn = (business_name or "").lower()
-            if "cabang" in bn or "branch" in bn:
-                return "Cabang"
-            if "subkios" in bn or "sub kios" in bn:
-                return "Subkios"
-            if "kios" in bn:
-                return "Kios"
-            if " pos " in f" {bn} " or bn.startswith("pos ") or bn.endswith(" pos"):
-                return "Pos"
-
-            # Infer dari konvensi store_code 5 digit FIFGROUP (2 digit terakhir)
-            sc_str = str(store_code).strip().split(".")[0]
-            if len(sc_str) == 5 and sc_str.isdigit():
-                suffix = int(sc_str[3:5])
-                if suffix in (0, 1, 2, 3, 4):
-                    return "Cabang"
-                elif 50 <= suffix <= 69:
-                    return "Pos"
-                elif 70 <= suffix <= 79:
-                    return "Kios"
-                elif 80 <= suffix <= 89:
-                    return "Subkios"
-
-            return "Lainnya"
-
-        def normalize_status(raw):
-            """Normalisasi status verifikasi ke nilai kanonik."""
-            if not raw:
-                return "Need Verification"
-            v = str(raw).strip().lower()
-            if v == "verified":
-                return "Verified"
-            if v in ("duplicate",):
-                return "Duplicate"
-            if v == "suspended":
-                return "Suspended"
-            if v in ("need verification", "need reverification",
-                     "unverified", "verification required", "processing"):
-                return "Need Verification"
-            return "Need Verification"
-
-        import re
-
-        def extract_zipcode(address_str):
-            """Ekstrak 5-digit kode pos Indonesia dari string alamat."""
-            if not address_str:
-                return ""
-            m = re.search(r"\b(\d{5})\b", str(address_str))
-            return m.group(1) if m else ""
-
-        def extract_branch_prefix(sc_str):
-            """Ambil 3 digit prefix cabang dari store code yang dinormalisasi."""
-            if not sc_str:
-                return ""
-            s = str(sc_str).strip().split(".")[0]
-            clean = re.sub(r"[^\d]", "", s)
-            return clean[:3] if len(clean) >= 3 else ""
-
-        locations = []
-        with_coords = 0
-        without_coords = 0
-
-        for s in snapshots:
-            has_coord = (
-                s.get("latitude") is not None
-                and s.get("longitude") is not None
-            )
-
-            if has_coord:
-                with_coords += 1
-            else:
-                without_coords += 1
-                # Jangan masukkan lokasi tanpa koordinat ke markers
-                continue
-
-            sc = s.get("store_code") or ""
-            master_info = master_map.get(sc, {})
-
-            raw_network = master_info.get("raw_network", "")
-            b_name = s.get("business_name") or ""
-            network_type = normalize_network_type(raw_network, business_name=b_name, store_code=sc)
-
-            status_normalized = normalize_status(s.get("status", ""))
-            addr = s.get("address") or ""
-            zipcode = extract_zipcode(addr)
-            prefix = extract_branch_prefix(sc)
-
-            locations.append({
-                "id": s["id"],
-                "store_code": sc,
-                "branch_prefix": prefix,
-                "zipcode": zipcode,
-                "business_name": s.get("business_name") or "",
-                "address": addr[:150],
-                "latitude": s["latitude"],
-                "longitude": s["longitude"],
-                "status": status_normalized,
-                "status_raw": s.get("status") or "",
-                "coord_status": s.get("coord_status") or "OK",
-                "network_type": network_type,
-                "network_raw": raw_network,
-                "network_name": master_info.get("network_name", ""),
-                "area": master_info.get("area", ""),
-                "maps_uri": s.get("maps_uri") or "",
-                "has_vom": bool(s.get("has_vom")),
-            })
+        hierarchy_tree = ac_svc.get_network_hierarchy_tree()
+        branch_polygons = ac_svc.get_all_branch_coverage_polygons()
+        pos_polygons = ac_svc.get_all_pos_coverage_polygons()
 
         return JsonResponse({
             "locations": locations,
+            "hierarchy_tree": hierarchy_tree,
+            "branch_polygons": branch_polygons,
+            "pos_polygons": pos_polygons,
             "stats": {
                 "with_coords": with_coords,
                 "without_coords": without_coords,
-                "total": len(snapshots),
+                "total": len(locations),
+                "cabang_count": cabang_count,
+                "pos_count": pos_count,
+                "kios_count": kios_count,
             },
         })
+
+
+
+
+class AreaCoverageAPIView(View):
+    """
+    Endpoint JSON yang menyajikan daftar 34 Area FIFGROUP dan GeoJSON Polygon/MultiPolygon
+    berdasarkan data/fifgroup_area_coverage.json.
+
+    GET /api/area-coverage/            → List 34 area dengan metadata (total_points, total_zips, dll)
+    GET /api/area-coverage/?area=JATA+1 → GeoJSON Feature Polygon/MultiPolygon untuk area tertentu
+    """
+
+    def get(self, request: HttpRequest) -> JsonResponse:
+        from gbp.services import area_coverage_service as ac_svc
+
+        area_name = request.GET.get("area", "").strip()
+        if area_name:
+            feature = ac_svc.get_area_geojson_feature(area_name)
+            if not feature:
+                return JsonResponse({"ok": False, "error": f"Area '{area_name}' tidak ditemukan."}, status=404)
+            return JsonResponse({"ok": True, "feature": feature})
+
+        areas_list = ac_svc.get_all_areas_meta()
+        geojson_all = ac_svc.get_all_areas_geojson()
+        return JsonResponse({"ok": True, "areas": areas_list, "geojson": geojson_all})
 
 
 _BOUNDARIES_CACHE = None
@@ -495,6 +413,24 @@ class BranchBoundariesAPIView(View):
                 return JsonResponse({"type": "FeatureCollection", "features": [], "error": str(e)})
 
         return JsonResponse({"type": "FeatureCollection", "features": []})
+
+
+class AreaColorMapAPIView(View):
+    """
+    Endpoint JSON yang mengembalikan peta warna per Area FIFGROUP.
+    Digunakan oleh frontend JavaScript untuk mendapatkan warna identitas area secara deterministic.
+
+    GET /api/area-color-map/
+    """
+    def get(self, request: HttpRequest) -> JsonResponse:
+        from gbp.services import area_coverage_service as ac_svc
+        color_map = ac_svc.get_area_color_map()
+        areas_meta = ac_svc.get_all_areas_meta()
+        return JsonResponse({
+            "ok": True,
+            "color_map": color_map,
+            "areas_meta": areas_meta,
+        })
 
 
 # ══════════════════════════════════════════════════════════════════════
